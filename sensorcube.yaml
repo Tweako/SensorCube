@@ -1,0 +1,13 @@
+substitutions:
+  name: sensorcube
+  friendly_name: SensorCube
+  num_leds: "12" # Number of LEDs in the ring
+  hidden_ssid: false
+  log_level: INFO
+
+packages:
+  device_base: !include components/sensorcube_base.yaml
+  ens160_base: !include components/ens160.yaml
+  ld2450_base: !include components/ld2450.yaml
+  ledring_base: !include components/ledring.yaml
+  ldr_base: !include components/ldr.yaml

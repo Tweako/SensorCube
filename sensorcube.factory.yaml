@@ -1,0 +1,30 @@
+substitutions:
+  name: sensorcube
+  friendly_name: SensorCube
+  num_leds: "12" # Number of LEDs in the ring
+  hidden_ssid: false
+  log_level: INFO
+
+# Sets up Bluetooth LE (Only on ESP32) to allow the user
+# to provision wifi credentials to the device.
+esp32_improv:
+  authorizer: none
+
+# Sets up the improv via serial client for Wi-Fi provisioning.
+improv_serial:
+
+update:
+  - platform: http_request
+    id: update_http_request
+    name: "SensorCube Update"
+    source: https://raw.githubusercontent.com/Tweako/sensorcube/main/sensorcube-manifest.json
+
+dashboard_import:
+  package_import_url: github://Tweako/sensorcube/sensorcube.yaml@main
+
+packages:
+  device_base: !include components/sensorcube_base.yaml
+  ens160_base: !include components/ens160.yaml
+  ld2450_base: !include components/ld2450.yaml
+  ledring_base: !include components/ledring.yaml
+  ldr_base: !include components/ldr.yaml

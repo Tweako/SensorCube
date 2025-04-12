@@ -1,0 +1,40 @@
+sensor:
+  - platform: ens160_i2c
+    i2c_id: i2c
+    address: 0x53
+    name: "ENS160 Air Quality Sensor"
+    air_quality:
+      name: "Air Quality Index"
+      id: ens160_aqi
+    eco2:
+      name: "eCO2"
+      id: ens160_eco2
+      filters:
+        - offset: -100 # Based on comparison with Sensirion SCD40
+        - sliding_window_moving_average: # Smooth out the values
+            window_size: 15
+            send_every: 15
+    tvoc:
+      name: "Total Volatile Organic Compounds"
+      id: ens160_tvoc
+    compensation:
+      temperature: id_temperature_sensor
+      humidity: id_humidity_sensor
+  - platform: aht10
+    variant: AHT20
+    i2c_id: i2c
+    address: 0x38
+    name: "AHT20 Temperature and Humidity Sensor"
+    temperature:
+      id: id_temperature_sensor
+      name: "ENS160+AHT20 Temperature"
+      internal: true
+      filters:
+        - offset: -7 # Due to hotplate of the ENS160
+    humidity:
+      id: id_humidity_sensor
+      name: "ENS160+AHT20 Humidity"
+      internal: true
+      filters:
+        - offset: 5 # Due to hotplate of the ENS160
+    

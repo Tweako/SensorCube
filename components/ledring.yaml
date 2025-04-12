@@ -1,0 +1,131 @@
+esphome:
+  on_boot:
+    priority: 600
+    then:
+      - light.turn_on:
+          id: led_ring
+          effect: "Rainbow Spinner"
+
+light:
+  - platform: neopixelbus
+    type: GRB
+    variant: WS2811
+    gamma_correct: 1.5  # Adjust gamma correction
+    pin: GPIO4
+    num_leds: ${num_leds}
+    name: "LED ring"
+    id: led_ring
+    effects:
+      - addressable_rainbow:
+          name: "Rainbow Spinner"
+          speed: 8
+          width: "${num_leds}"
+      - addressable_rainbow:
+          name: "Rainbow Fader"
+          speed: 3
+          width: "${num_leds}"
+      - random:
+          name: "Random Slow"
+          transition_length: 30s
+          update_interval: 30s
+      - addressable_lambda:
+          name: "Fire"
+          update_interval: 15ms
+          lambda: |-
+            int Cooling = 55;
+            int Sparking = 110;
+            static byte heat[188];
+            int cooldown;
+
+            // Step 1.  Cool down every cell a little
+            for( int i = 0; i < it.size(); i++) {
+              cooldown = random(0, ((Cooling * 10) / it.size()) + 2);
+
+              if(cooldown>heat[i]) {
+                heat[i]=0;
+              } else {
+                heat[i]=heat[i]-cooldown;
+              }
+            }
+
+            // Step 2.  Heat from each cell drifts 'up' and diffuses a little
+            for( int k= it.size() - 1; k >= 2; k--) {
+              heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2]) / 3;
+            }
+
+            // Step 3.  Randomly ignite new 'sparks' near the bottom
+            if( random(255) < Sparking ) {
+              int y = random(7);
+              heat[y] = heat[y] + random(160,255);
+            }
+
+            // Step 4.  Convert heat to LED colors
+            for( int Pixel = 0; Pixel < it.size(); Pixel++) {
+              // Scale 'heat' down from 0-255 to 0-191
+              byte t192 = round((heat[Pixel]/255.0)*191);
+
+              // calculate ramp up from
+              byte heatramp = t192 & 0x3F; // 0..63
+              heatramp <<= 2; // scale up to 0..252
+
+              // figure out which third of the spectrum we're in:
+              //this is where you can reverse the effect by switching the commented out lines in all 3 places.
+              if( t192 > 0x80) {                     // hottest
+                //it[it.size() - Pixel - 1] = ESPColor(255, 255, heatramp);
+                it[Pixel] = ESPColor(255, 255, heatramp);
+              } else if( t192 > 0x40 ) {             // middle
+                //it[it.size() - Pixel - 1] = ESPColor(255, heatramp, 0);
+                it[Pixel] = ESPColor(255, heatramp, 0);
+              } else {                               // coolest
+                //it[it.size() - Pixel - 1] = ESPColor(heatramp, 0, 0);
+                it[Pixel] = ESPColor(heatramp, 0, 0);
+              }
+            }
+      - addressable_lambda:
+          name: "Expo Light"
+          update_interval: 16ms
+          lambda: |-
+            static int x = -400;
+            float y = 0.35+0.65*exp(-pow(x, 2)/49000);
+            int8_t r = ceil(current_color.r * y);
+            int8_t g = ceil(current_color.g * y);
+            int8_t b = ceil(current_color.b * y);
+            it.all() = ESPColor(r,g,b);
+            x += 1;
+            if (x == 400)
+              x = -400;
+      - addressable_lambda:
+          name: "Wipe In"
+          update_interval: 12ms
+          lambda: |-
+            static int x = 0;
+            if (initial_run) {
+              x = 0;
+              it.all() = ESPColor::BLACK;
+            }
+            if (x < it.size()) {
+              it[x] = current_color;
+              x += 1;
+            }
+      - addressable_lambda:
+          name: "Wipe Out"
+          update_interval: 12ms
+          lambda: |-
+            static int x = 0;
+            if (initial_run) {
+              x = it.size();
+            }
+            if (x > 0) {
+              x -= 1; 
+              it[x] = ESPColor::BLACK;
+            }
+      - addressable_random_twinkle:
+      - addressable_flicker:
+      - addressable_fireworks:
+      - addressable_twinkle:
+      - addressable_scan:
+      - addressable_color_wipe:
+      - flicker:
+      - strobe:
+      - random: 
+      - pulse:

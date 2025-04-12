@@ -1,0 +1,88 @@
+substitutions:
+  device_description: ${friendly_name} made by RFinkers, version ${version}.
+  version: dev
+  date: "12-04-2025"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  name_add_mac_suffix: true
+  comment: '${device_description}'
+  project:
+    name: "rfinkers.${name}"
+    version: "${version}"
+
+preferences:
+  flash_write_interval: 120min
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: arduino
+
+logger:
+  level: ${log_level}
+  baud_rate: 0  # Disable logging over UART
+
+# Enable Home Assistant API
+api:
+
+ota:
+  - platform: esphome
+    id: ota_esphome
+  - platform: http_request
+    id: ota_http_request
+
+http_request:
+  verify_ssl: false
+
+time:
+  - platform: homeassistant
+    id: time_homeassistant
+    on_time_sync:
+      - component.update: uptime_timestamp
+
+safe_mode:
+
+wifi:
+
+i2c:
+  id: i2c
+  sda: GPIO6
+  scl: GPIO7
+  scan: true
+
+sensor:
+  - platform: uptime
+    id: esp_uptime
+  - platform: template
+    id: uptime_timestamp
+    name: "Online sinds"
+    device_class: "timestamp"
+    accuracy_decimals: 0
+    update_interval: never
+    icon: 'mdi:clock-start'
+    entity_category: diagnostic
+    lambda: |-
+      static float timestamp = (
+        id(time_homeassistant).utcnow().timestamp - id(esp_uptime).state
+      );
+      return timestamp;
+
+text_sensor:
+  - platform: version
+    name: "ESPHome Version"
+    hide_timestamp: true
+
+button:
+  - platform: restart
+    name: "Restart device"
+    entity_category: diagnostic
+  - platform: factory_reset
+    name: "Factory reset"
+    entity_category: diagnostic
+    disabled_by_default: True
+  - platform: safe_mode
+    name: "Safe Mode"
+    entity_category: diagnostic
+    disabled_by_default: True

@@ -1,0 +1,81 @@
+external_components:
+  - source: github://TillFleisch/ESPHome-HLK-LD2450@main
+
+LD2450:
+  uart_id: uart_ld2450
+  flip_x_axis: true
+  fast_off_detection: true
+  max_detection_tilt_angle:
+    name: "Max Tilt Angle"
+    initial_value: 40°
+  min_detection_tilt_angle:
+    name: "Min Tilt Angle"
+    initial_value: -40°
+  max_detection_distance:
+    name: "Max Distance"
+    initial_value: 4m
+  max_distance_margin: 30cm
+  
+  restart_button:
+    name: "Restart Sensor"
+  factory_reset_button:
+    name: "Factory Reset Sensor"
+
+  tracking_mode_switch:
+    name: "Multiple Target Tracking"
+  # bluetooth_switch:
+  #   name: "Sensor Bluetooth"
+
+  # baud_rate_select:
+  #   name: "Sensor Baud Rate"
+
+  occupancy:
+    name: Bezetting
+  target_count:
+    name: Target Count
+
+  targets:
+    - target:
+        # name: "T1"
+        id: t1
+        # debug: true
+        x_position:
+            id: t1_xpos
+        y_position:
+            id: t1_ypos
+        speed:
+            id: t1_speed
+        distance_resolution:
+            id: t1_res
+        angle:
+            id: t1_angle
+        distance:
+            id: t1_distance
+    # - target:
+    #     id: t2
+    #     x_position:
+    #         id: t2_xpos
+    #     y_position:
+    #         id: t2_ypos
+    #     speed:
+    #         id: t2_speed
+    #     distance_resolution:
+    #         id: t2_res
+    #     angle:
+    #         id: t2_angle
+    #     distance:
+    #         id: t2_distance
+    # - target:
+    #     id: t3
+    #     x_position:
+    #         id: t3_xpos
+    #     y_position:
+    #         id: t3_ypos
+    #     speed:
+    #         id: t3_speed
+    #     distance_resolution:
+    #         id: t3_res
+    #     angle:
+    #         id: t3_angle
+    #     distance:
+    #         id: t3_distance

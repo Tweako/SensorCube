@@ -1,4 +1,3 @@
-# CHANGEME: Set these variable to your liking
-title: ESPHome Project Template
-description: Powered by ESPHome and ESP Web Tools
+title: SensorCube
+description: SensorCube made by RFinkers
 theme: jekyll-theme-slate

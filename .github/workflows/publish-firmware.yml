@@ -12,14 +12,10 @@ jobs:
     name: Build Firmware
     uses: esphome/workflows/.github/workflows/build.yml@2025.1.0
     with:
-      #### Modify below here to match your project ####
       files: |
-        project-template-esp32.factory.yaml
-        project-template-esp32-c3.factory.yaml
-        project-template-esp32-s3.factory.yaml
-      esphome-version: 2024.10.3
-      combined-name: project-template
-      #### Modify above here to match your project ####
+        sensorcube.factory.yaml
+      esphome-version: 2025.3.3
+      combined-name: sensorcube
 
       release-summary: ${{ github.event.release.body }}
       release-url: ${{ github.event.release.html_url }}
