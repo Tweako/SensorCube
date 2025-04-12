@@ -22,7 +22,7 @@ esp32:
 
 logger:
   level: ${log_level}
-  baud_rate: 0  # Disable logging over UART
+  # baud_rate: 0  # Disable logging over UART (improv_serial require the logger to be enabled)
 
 # Enable Home Assistant API
 api:
