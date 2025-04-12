@@ -2,7 +2,7 @@ substitutions:
   name: sensorcube
   friendly_name: SensorCube
   num_leds: "12" # Number of LEDs in the ring
-  hidden_ssid: false
+  hidden_ssid: "False"
   log_level: INFO
 
 # Sets up Bluetooth LE (Only on ESP32) to allow the user
