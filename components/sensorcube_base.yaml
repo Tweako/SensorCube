@@ -51,6 +51,14 @@ i2c:
   scl: GPIO7
   scan: true
 
+uart:
+  id: uart_ld2450
+  tx_pin: GPIO20
+  rx_pin: GPIO21
+  baud_rate: 256000
+  parity: NONE
+  stop_bits: 1
+
 sensor:
   - platform: uptime
     id: esp_uptime
