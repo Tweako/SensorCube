@@ -34,7 +34,7 @@ ota:
     id: ota_http_request
 
 http_request:
-  verify_ssl: false
+  verify_ssl: "False"
 
 time:
   - platform: homeassistant
