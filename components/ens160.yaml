@@ -1,9 +1,7 @@
 sensor:
   - platform: ens160_i2c
-    i2c_id: i2c
     address: 0x53
-    name: "ENS160 Air Quality Sensor"
-    air_quality:
+    aqi:
       name: "Air Quality Index"
       id: ens160_aqi
     eco2:
@@ -22,9 +20,7 @@ sensor:
       humidity: id_humidity_sensor
   - platform: aht10
     variant: AHT20
-    i2c_id: i2c
     address: 0x38
-    name: "AHT20 Temperature and Humidity Sensor"
     temperature:
       id: id_temperature_sensor
       name: "ENS160+AHT20 Temperature"
