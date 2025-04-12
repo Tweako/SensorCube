@@ -20,11 +20,7 @@ Met SensorCube kun je:
 ## Installatie
 
 1. **Firmware installeren**  
-   Gebruik de onderstaande knop om de vooraf gebouwde firmware direct op je apparaat te installeren via USB vanuit de browser.
-
-   <esp-web-install-button manifest="firmware/sensorcube.manifest.json"></esp-web-install-button>
-
-   <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+Bezoek de [officiële installatiepagina](https://tweako.github.io/SensorCube/) voor gedetailleerde instructies en downloads.
 
 2. **Handmatige installatie**  
    Clone deze repository en pas de configuratiebestanden aan jouw behoeften aan. Gebruik vervolgens [ESPHome](https://esphome.io/) om de firmware te compileren en te uploaden.
