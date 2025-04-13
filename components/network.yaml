@@ -1,0 +1,55 @@
+wifi:
+  # Set up a wifi access point using the device name above
+  ap:
+
+# In combination with the `ap` this allows the user
+# to provision wifi credentials to the device.
+captive_portal:
+
+# Enable Home Assistant API
+api:
+
+ota:
+  - platform: esphome
+    id: ota_esphome
+  - platform: http_request
+    id: ota_http_request
+
+http_request:
+  verify_ssl: "False"
+
+web_server:
+  port: 80
+  version: 3
+
+time:
+  - platform: homeassistant
+    id: time_homeassistant
+    on_time_sync:
+      - component.update: uptime_timestamp
+
+sensor:
+  - platform: template
+    id: uptime_timestamp
+    name: "Online sinds"
+    device_class: "timestamp"
+    accuracy_decimals: 0
+    update_interval: never
+    icon: 'mdi:clock-start'
+    entity_category: diagnostic
+    lambda: |-
+      static float timestamp = (
+        id(time_homeassistant).utcnow().timestamp - id(esp_uptime).state
+      );
+      return timestamp;
+
+button:
+  - platform: template
+    id: check_for_update_button
+    name: Check for firmware update
+    entity_category: diagnostic
+    icon: "mdi:cloud-refresh"
+    device_class: update
+    on_press:
+      then:
+        - component.update: update_http_request

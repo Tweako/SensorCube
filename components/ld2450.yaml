@@ -1,6 +1,14 @@
 external_components:
   - source: github://TillFleisch/ESPHome-HLK-LD2450@main
 
+uart:
+  id: uart_ld2450
+  tx_pin: GPIO20
+  rx_pin: GPIO21
+  baud_rate: 256000
+  parity: NONE
+  stop_bits: 1
+
 LD2450:
   uart_id: uart_ld2450
   flip_x_axis: true

@@ -10,3 +10,50 @@ packages:
   ens160_base: !include components/ens160.yaml
   ledring_base: !include components/ledring.yaml
   ldr_base: !include components/ldr.yaml
+
+esphome:
+  on_boot:
+    priority: 800
+    then:
+      - light.turn_on:
+          id: led_ring
+          effect: "Rainbow Spinner"
+
+interval:
+  - interval: 60s
+    then:
+    - if:
+        condition:
+          - lambda: 'return isnan(id(ens160_eco2).state);' # Check if eCO2 value is not available
+        then:
+          - light.turn_on:
+              id: led_ring
+              effect: "Rainbow Spinner"
+        else:
+          - lambda: |-
+              auto call = id(led_ring).turn_on();
+              float brightness = (id(illuminance).state / 200.0) * 0.50 + 0.05;  // Scale to 5-50%
+              brightness = fmax(0.05, fmin(1.0, brightness));  // Ensure brightness is between 5% to 100%
+              call.set_brightness(brightness);
+
+              float eco2 = id(ens160_eco2).state;
+
+              // Change LED color based on eCO2 value
+              if (eco2 < 600) { // Excellent
+                call.set_effect("None");
+                call.set_rgb(0, 0, 1);  // Blue
+              } else if (eco2 < 800) { // Good
+                call.set_effect("None");
+                call.set_rgb(0, 1, 0);  // Green
+              } else if (eco2 < 1000) { // Fair
+                call.set_effect("None");
+                call.set_rgb(1, 1, 0);  // Yellow
+              } else if (eco2 < 1500) { // Poor
+                call.set_effect("None");
+                call.set_rgb(1, 0.5, 0);  // Orange
+              } else if (eco2 < 65000) { // Bad
+                call.set_rgb(1, 0, 0);  // Red
+                call.set_effect("Pulse");
+              }
+
+              call.perform();

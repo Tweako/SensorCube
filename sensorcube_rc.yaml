@@ -1,6 +1,6 @@
 substitutions:
-  name: sensorcube
-  friendly_name: SensorCube
+  name: sensorcube_rc
+  friendly_name: SensorCube RC Receiver
   num_leds: "12" # Number of LEDs in the ring
   hidden_ssid: "False"
   log_level: INFO
@@ -12,6 +12,7 @@ packages:
   ld2450_base: !include components/ld2450.yaml
   ledring_base: !include components/ledring.yaml
   ldr_base: !include components/ldr.yaml
+  remote_receiver_base: !include components/remote_receiver.yaml
 
 interval:
   - interval: 60s

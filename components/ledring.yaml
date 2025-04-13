@@ -19,6 +19,11 @@ light:
     name: "LED ring"
     id: led_ring
     effects:
+      - random:
+      - random:
+          name: "Random Slow"
+          transition_length: 30s
+          update_interval: 30s
       - addressable_rainbow:
           name: "Rainbow Spinner"
           speed: 8
@@ -27,76 +32,46 @@ light:
           name: "Rainbow Fader"
           speed: 3
           width: "${num_leds}"
-      - random:
-          name: "Random Slow"
-          transition_length: 30s
-          update_interval: 30s
       - addressable_lambda:
           name: "Fire"
-          update_interval: 15ms
+          update_interval: 50ms
           lambda: |-
             int Cooling = 55;
             int Sparking = 110;
             static byte heat[188];
             int cooldown;
 
-            // Step 1.  Cool down every cell a little
-            for( int i = 0; i < it.size(); i++) {
+            for (int i = 0; i < it.size(); i++) {
               cooldown = random(0, ((Cooling * 10) / it.size()) + 2);
 
-              if(cooldown>heat[i]) {
-                heat[i]=0;
+              if (cooldown > heat[i]) {
+                heat[i] = 0;
               } else {
-                heat[i]=heat[i]-cooldown;
+                heat[i] = heat[i] - cooldown;
               }
             }
 
-            // Step 2.  Heat from each cell drifts 'up' and diffuses a little
-            for( int k= it.size() - 1; k >= 2; k--) {
+            for (int k = it.size() - 1; k >= 2; k--) {
               heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2]) / 3;
             }
 
-            // Step 3.  Randomly ignite new 'sparks' near the bottom
-            if( random(255) < Sparking ) {
+            if (random(255) < Sparking) {
               int y = random(7);
-              heat[y] = heat[y] + random(160,255);
+              heat[y] = heat[y] + random(160, 255);
             }
 
-            // Step 4.  Convert heat to LED colors
-            for( int Pixel = 0; Pixel < it.size(); Pixel++) {
-              // Scale 'heat' down from 0-255 to 0-191
-              byte t192 = round((heat[Pixel]/255.0)*191);
+            for (int Pixel = 0; Pixel < it.size(); Pixel++) {
+              byte t192 = round((heat[Pixel] / 255.0) * 191);
+              byte heatramp = (t192 & 0x3F) << 2;
 
-              // calculate ramp up from
-              byte heatramp = t192 & 0x3F; // 0..63
-              heatramp <<= 2; // scale up to 0..252
-
-              // figure out which third of the spectrum we're in:
-              //this is where you can reverse the effect by switching the commented out lines in all 3 places.
-              if( t192 > 0x80) {                     // hottest
-                //it[it.size() - Pixel - 1] = ESPColor(255, 255, heatramp);
+              if (t192 > 0x80) {
                 it[Pixel] = ESPColor(255, 255, heatramp);
-              } else if( t192 > 0x40 ) {             // middle
-                //it[it.size() - Pixel - 1] = ESPColor(255, heatramp, 0);
+              } else if (t192 > 0x40) {
                 it[Pixel] = ESPColor(255, heatramp, 0);
-              } else {                               // coolest
-                //it[it.size() - Pixel - 1] = ESPColor(heatramp, 0, 0);
+              } else {
                 it[Pixel] = ESPColor(heatramp, 0, 0);
               }
             }
-      - addressable_lambda:
-          name: "Expo Light"
-          update_interval: 16ms
-          lambda: |-
-            static int x = -400;
-            float y = 0.35+0.65*exp(-pow(x, 2)/49000);
-            int8_t r = ceil(current_color.r * y);
-            int8_t g = ceil(current_color.g * y);
-            int8_t b = ceil(current_color.b * y);
-            it.all() = ESPColor(r,g,b);
-            x += 1;
-            if (x == 400)
-              x = -400;
       - addressable_lambda:
           name: "Wipe In"
           update_interval: 12ms
@@ -123,68 +98,10 @@ light:
               it[x] = ESPColor::BLACK;
             }
       - addressable_random_twinkle:
-      - addressable_flicker:
       - addressable_fireworks:
       - addressable_twinkle:
       - addressable_scan:
       - addressable_color_wipe:
       - flicker:
       - strobe:
-      - random: 
       - pulse:
-
-interval:
-  - interval: 60s
-    then:
-      if:
-        condition:
-          - wifi.connected # WiFi connected
-        then:
-          - if:
-              condition:
-                - lambda: 'return isnan(id(ens160_eco2).state);' # Check if eCO2 value is not available
-              then:
-                - light.turn_on:
-                    id: led_ring
-                    effect: "Rainbow Spinner"
-              else:
-                - lambda: |-
-                    auto call = id(led_ring).turn_on();
-                    float brightness = (id(illuminance).state / 200.0) * 0.50 + 0.05;  // Scale to 5-50%
-                    brightness = fmax(0.05, fmin(1.0, brightness));  // Ensure brightness is between 5% to 100%
-                    call.set_brightness(brightness);
-
-                    float eco2 = id(ens160_eco2).state;
-
-                    // Change LED color based on eCO2 value
-                    if (eco2 < 600) { // Excellent
-                      call.set_effect("None");
-                      call.set_rgb(0, 0, 1);  // Blue
-                    } else if (eco2 < 800) { // Good
-                      call.set_effect("None");
-                      call.set_rgb(0, 1, 0);  // Green
-                    } else if (eco2 < 1000) { // Fair
-                      call.set_effect("None");
-                      call.set_rgb(1, 1, 0);  // Yellow
-                    } else if (eco2 < 1500) { // Poor
-                      call.set_effect("None");
-                      call.set_rgb(1, 0.5, 0);  // Orange
-                    } else if (eco2 < 65000) { // Bad
-                      call.set_rgb(1, 0, 0);  // Red
-                      call.set_effect("Pulse");
-                    }
-
-                    call.perform();
-  - interval: 5s
-    then:
-      - if:
-          condition:
-            - wifi.connected # WiFi connected
-          then:
-            - if:
-                condition:
-                  - lambda: 'return isnan(id(ens160_eco2).state);' # Check if eCO2 value is not available
-                then:
-                  - light.turn_on:
-                      id: led_ring
-                      effect: "Rainbow Spinner"

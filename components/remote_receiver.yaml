@@ -1,0 +1,42 @@
+remote_receiver:
+  pin:
+    number: GPIO1
+    inverted: true
+  rmt_channel: 2
+
+binary_sensor:
+  - platform: remote_receiver
+    name: "Philips Remote Vol+"
+    rc6:
+      address: 0x00
+      command: 0x10
+  - platform: remote_receiver
+    name: "Philips Remote Vol-"
+    rc6:
+      address: 0x00
+      command: 0x11
+  - platform: remote_receiver
+    name: "Philips Remote Mute"
+    rc6:
+      address: 0x00
+      command: 0x0D
+  - platform: remote_receiver
+    name: "Philips red"
+    rc6: 
+      address: 0x00
+      command: 0x6D
+  - platform: remote_receiver
+    name: "Philips green"
+    rc6: 
+      address: 0x00
+      command: 0x6E
+  - platform: remote_receiver
+    name: "Philips yellow"
+    rc6: 
+      address: 0x00
+      command: 0x6F
+  - platform: remote_receiver
+    name: "Philips blue"
+    rc6: 
+      address: 0x00
+      command: 0x70

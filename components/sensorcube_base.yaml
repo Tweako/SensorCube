@@ -21,63 +21,16 @@ logger:
   level: ${log_level}
   # baud_rate: 0  # Disable logging over UART (improv_serial require the logger to be enabled)
 
-# Enable Home Assistant API
-api:
-
-ota:
-  - platform: esphome
-    id: ota_esphome
-  - platform: http_request
-    id: ota_http_request
-
-http_request:
-  verify_ssl: "False"
-
-time:
-  - platform: homeassistant
-    id: time_homeassistant
-    on_time_sync:
-      - component.update: uptime_timestamp
-
 safe_mode:
-
-wifi:
-  # Set up a wifi access point using the device name above
-  ap:
-
-# In combination with the `ap` this allows the user
-# to provision wifi credentials to the device.
-captive_portal:
 
 i2c:
   sda: GPIO6
   scl: GPIO7
   scan: true
 
-uart:
-  id: uart_ld2450
-  tx_pin: GPIO20
-  rx_pin: GPIO21
-  baud_rate: 256000
-  parity: NONE
-  stop_bits: 1
-
 sensor:
   - platform: uptime
     id: esp_uptime
-  - platform: template
-    id: uptime_timestamp
-    name: "Online sinds"
-    device_class: "timestamp"
-    accuracy_decimals: 0
-    update_interval: never
-    icon: 'mdi:clock-start'
-    entity_category: diagnostic
-    lambda: |-
-      static float timestamp = (
-        id(time_homeassistant).utcnow().timestamp - id(esp_uptime).state
-      );
-      return timestamp;
 
 text_sensor:
   - platform: version
@@ -96,12 +49,3 @@ button:
     name: "Safe Mode"
     entity_category: diagnostic
     disabled_by_default: True
-  - platform: template
-    id: check_for_update_button
-    name: Check for firmware update
-    entity_category: diagnostic
-    icon: "mdi:cloud-refresh"
-    device_class: update
-    on_press:
-      then:
-        - component.update: update_http_request
