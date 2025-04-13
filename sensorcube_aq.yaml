@@ -1,0 +1,12 @@
+substitutions:
+  name: sensorcube_aq
+  friendly_name: SensorCube Air Quality
+  num_leds: "12" # Number of LEDs in the ring
+  hidden_ssid: "False"
+  log_level: INFO
+
+packages:
+  device_base: !include components/sensorcube_base.yaml
+  ens160_base: !include components/ens160.yaml
+  ledring_base: !include components/ledring.yaml
+  ldr_base: !include components/ldr.yaml
