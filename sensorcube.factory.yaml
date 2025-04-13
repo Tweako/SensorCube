@@ -1,6 +1,10 @@
 packages:
   core: !include sensorcube.yaml
 
+esphome:
+  project:
+    version: dev
+
 # Sets up the improv via serial client for Wi-Fi provisioning.
 improv_serial:
 
