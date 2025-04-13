@@ -1,7 +1,5 @@
 substitutions:
-  device_description: ${friendly_name} made by RFinkers, version ${version}.
-  version: dev
-  date: "12-04-2025"
+  device_description: ${friendly_name} made by RFinkers, version ${project.version}
 
 esphome:
   name: ${name}
@@ -10,7 +8,7 @@ esphome:
   comment: '${device_description}'
   project:
     name: "rfinkers.${name}"
-    version: "${version}"
+    version: dev
 
 preferences:
   flash_write_interval: 120min

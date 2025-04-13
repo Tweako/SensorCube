@@ -17,9 +17,9 @@ LD2450:
   max_distance_margin: 30cm
   
   restart_button:
-    name: "Restart Sensor"
+    name: "Restart mmWave Sensor"
   factory_reset_button:
-    name: "Factory Reset Sensor"
+    name: "Factory reset mmWave Sensor"
 
   tracking_mode_switch:
     name: "Multiple Target Tracking"
