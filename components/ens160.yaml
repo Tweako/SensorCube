@@ -12,6 +12,12 @@ sensor:
         - sliding_window_moving_average: # Smooth out the values
             window_size: 15
             send_every: 15
+        - lambda: |-
+            if (x < 0) {
+              return 0;
+            } else {
+              return x;
+            }
     tvoc:
       name: "Total Volatile Organic Compounds"
       id: ens160_tvoc
@@ -33,4 +39,3 @@ sensor:
       internal: true
       filters:
         - offset: 5 # Due to hotplate of the ENS160
-    
