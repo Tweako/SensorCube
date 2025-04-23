@@ -1,0 +1,14 @@
+sensor:
+  - platform: dht
+    pin: GPIO5
+    model: AM2302
+    temperature:
+      name: "Temperatuur"
+      filters:
+        - offset: -1
+        - sliding_window_moving_average: # Smooth out the values
+            window_size: 5
+            send_every: 15
+    humidity:
+      name: "Luchtvochtigheid"
+    update_interval: 60s

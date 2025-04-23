@@ -8,6 +8,7 @@ substitutions:
 packages:
   device_base: !include components/sensorcube_base.yaml
   network_base: !include components/network.yaml
+  dht22_base: !include components/dht22.yaml
   ens160_base: !include components/ens160.yaml
   ld2450_base: !include components/ld2450.yaml
   ledring_base: !include components/ledring.yaml
