@@ -12,10 +12,12 @@ Met SensorCube kun je:
 
 ## Ondersteunde sensoren en componenten
 
+- **DHT22**: Meet temperatuur en luchtvochtigheid.
 - **ENS160**: Meet luchtkwaliteit, eCO2 en TVOC.
-- **AHT20**: Meet temperatuur en luchtvochtigheid.
+- **AHT20**: Compenseer eCO2 met temperatuur en luchtvochtigheid.
+- **TEMT6000**: Meet lichtintensiteit en regelt automatisch lichtintensiteit.
 - **LD2450**: mmWave-sensor voor bewegingsdetectie en aanwezigheidssensing.
-- **LED-ring**: Visuele feedback met aanpasbare lichteffecten.
+- **Neopixel-ring**: Visuele feedback met aanpasbare lichteffecten.
 
 ## Installatie
 
