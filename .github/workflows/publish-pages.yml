@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
 
       - run: mkdir -p output/firmware
 
@@ -39,14 +39,14 @@ jobs:
           destination: ./output
 
       - name: Fetch firmware files
-        uses: robinraju/release-downloader@v1.11
+        uses: robinraju/release-downloader@v1.12
         with:
           latest: true
           fileName: '*'
           out-file-path: output/firmware
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3.0.1
+        uses: actions/upload-pages-artifact@v4.0.0
         with:
           path: output
           retention-days: 1
