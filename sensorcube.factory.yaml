@@ -8,11 +8,13 @@ esphome:
 # Sets up the improv via serial client for Wi-Fi provisioning.
 improv_serial:
 
-update:
-  - platform: http_request
-    id: update_http_request
-    name: "SensorCube Update"
-    source: https://github.com/Tweako/SensorCube/releases/latest/download/sensorcube.manifest.json
+safe_mode:
+
+ota:
+  password: ""
+
+web_server:
+  port: 80
 
 dashboard_import:
   package_import_url: github://Tweako/sensorcube/sensorcube.yaml@main

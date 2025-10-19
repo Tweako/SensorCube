@@ -1,13 +1,11 @@
 substitutions:
-  device_description: ${friendly_name} made by RFinkers, version ${project.version}
+  device_description: "${friendly_name} made by RFinkers"
 
 esphome:
-  name: ${name}
-  friendly_name: ${friendly_name}
-  name_add_mac_suffix: true
-  comment: '${device_description}'
   project:
-    name: "rfinkers.${name}"
+    name: "rfinkers.sensorcube"
+    version: "1.0.0"
+  comment: "${device_description}"
 
 preferences:
   flash_write_interval: 120min

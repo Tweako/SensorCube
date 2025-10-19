@@ -1,6 +1,8 @@
+# Externe component voor LD2450 mmWave sensor
 external_components:
   - source: github://TillFleisch/ESPHome-HLK-LD2450@main
 
+# UART configuratie voor sensor communicatie
 uart:
   id: uart_ld2450
   tx_pin: GPIO20
@@ -9,20 +11,128 @@ uart:
   parity: NONE
   stop_bits: 1
 
+# Zone configuratie globals
+globals:
+  # Zone timeouts (in seconden)
+  - id: zone1_timeout
+    type: int
+    initial_value: "60"
+  - id: zone2_timeout
+    type: int
+    initial_value: "60"
+  - id: zone3_timeout
+    type: int
+    initial_value: "60"
+
+  # Zone margins (in cm)
+  - id: zone1_margin
+    type: int
+    initial_value: "30"
+  - id: zone2_margin
+    type: int
+    initial_value: "30"
+  - id: zone3_margin
+    type: int
+    initial_value: "30"
+  
+  # Zone enable flags
+  - id: zone1_enabled
+    type: bool
+    initial_value: "true"  # Hele ruimte standaard aan
+  - id: zone2_enabled
+    type: bool
+    initial_value: "false"
+  - id: zone3_enabled
+    type: bool
+    initial_value: "false"
+
+  # Zone polygon points (x,y in cm)
+  - id: zone1_points
+    type: std::vector<std::pair<float,float>>
+    initial_value: "{{100,350},{100,50},{-100,50},{-170,290}}"  # Hele ruimte
+  - id: zone2_points
+    type: std::vector<std::pair<float,float>>
+    initial_value: "{{100,350},{100,200},{0,200},{0,350}}"      # Rechts voor
+  - id: zone3_points
+    type: std::vector<std::pair<float,float>>
+    initial_value: "{{0,350},{0,200},{-100,200},{-100,350}}"    # Links voor
+
+# LD2450 Basis configuratie
 LD2450:
   uart_id: uart_ld2450
   flip_x_axis: true
   fast_off_detection: true
   max_detection_tilt_angle:
-    name: "Max Tilt Angle"
+    name: "Max Tilt Hoek"
     initial_value: 40°
   min_detection_tilt_angle:
-    name: "Min Tilt Angle"
+    name: "Min Tilt Hoek"
     initial_value: -40°
   max_detection_distance:
-    name: "Max Distance"
+    name: "Max Afstand"
     initial_value: 4m
   max_distance_margin: 30cm
+
+  # Dynamische zones - configureerbaar via Home Assistant
+  zones:
+    - zone:
+        name: "Zone 1"
+        target_timeout: 60s
+        margin: 30cm
+        polygon:
+          - point: {x: 100cm, y: 350cm}
+          - point: {x: 100cm, y: 50cm}
+          - point: {x: -100cm, y: 50cm}
+          - point: {x: -170cm, y: 290cm}
+        occupancy:
+          id: z1_occupancy
+        target_count:
+          id: z1_target_count
+    
+    - zone:
+        name: "Zone 2"
+        target_timeout: 60s
+        margin: 30cm
+        polygon:
+          - point: {x: 100cm, y: 350cm}
+          - point: {x: 100cm, y: 200cm}
+          - point: {x: 0cm, y: 200cm}
+          - point: {x: 0cm, y: 350cm}
+        occupancy:
+          id: z2_occupancy
+        target_count:
+          id: z2_target_count
+
+    - zone:
+        name: "Zone 3"
+        target_timeout: 60s
+        margin: 30cm
+        polygon:
+          - point: {x: 0cm, y: 350cm}
+          - point: {x: 0cm, y: 200cm}
+          - point: {x: -100cm, y: 200cm}
+          - point: {x: -100cm, y: 350cm}
+        occupancy:
+          id: z3_occupancy
+        target_count:
+          id: z3_target_count
+
+  # Target tracking configuratie
+  targets:
+    - target:
+        id: t1
+        x_position:
+          id: t1_xpos
+        y_position:
+          id: t1_ypos
+        speed:
+          id: t1_speed
+        distance_resolution:
+          id: t1_res
+        angle:
+          id: t1_angle
+        distance:
+          id: t1_distance
   
   restart_button:
     name: "Restart mmWave Sensor"
@@ -31,59 +141,224 @@ LD2450:
 
   tracking_mode_switch:
     name: "Multiple Target Tracking"
-  # bluetooth_switch:
-  #   name: "Sensor Bluetooth"
-
-  # baud_rate_select:
-  #   name: "Sensor Baud Rate"
-
   occupancy:
-    name: Bezetting
+    name: "Bezetting"
   target_count:
-    name: Target Count
+    name: "Target Count"
 
-  targets:
-    - target:
-        # name: "T1"
-        id: t1
-        # debug: true
-        x_position:
-            id: t1_xpos
-        y_position:
-            id: t1_ypos
-        speed:
-            id: t1_speed
-        distance_resolution:
-            id: t1_res
-        angle:
-            id: t1_angle
-        distance:
-            id: t1_distance
-    # - target:
-    #     id: t2
-    #     x_position:
-    #         id: t2_xpos
-    #     y_position:
-    #         id: t2_ypos
-    #     speed:
-    #         id: t2_speed
-    #     distance_resolution:
-    #         id: t2_res
-    #     angle:
-    #         id: t2_angle
-    #     distance:
-    #         id: t2_distance
-    # - target:
-    #     id: t3
-    #     x_position:
-    #         id: t3_xpos
-    #     y_position:
-    #         id: t3_ypos
-    #     speed:
-    #         id: t3_speed
-    #     distance_resolution:
-    #         id: t3_res
-    #     angle:
-    #         id: t3_angle
-    #     distance:
-    #         id: t3_distance
+# Zone UI - Switches voor het activeren van zones
+switch:
+  - platform: template
+    name: "Zone 1 Actief"
+    id: zone1_switch
+    icon: "mdi:shape-polygon-plus"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    turn_on_action:
+      - globals.set:
+          id: zone1_enabled
+          value: "true"
+    turn_off_action:
+      - globals.set:
+          id: zone1_enabled
+          value: "false"
+
+  - platform: template
+    name: "Zone 2 Actief"
+    id: zone2_switch
+    icon: "mdi:shape-polygon-plus"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - globals.set:
+          id: zone2_enabled
+          value: "true"
+    turn_off_action:
+      - globals.set:
+          id: zone2_enabled
+          value: "false"
+
+  - platform: template
+    name: "Zone 3 Actief"
+    id: zone3_switch
+    icon: "mdi:shape-polygon-plus"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - globals.set:
+          id: zone3_enabled
+          value: "true"
+    turn_off_action:
+      - globals.set:
+          id: zone3_enabled
+          value: "false"
+
+# Zone UI - Timeout en marge instellingen
+number:
+  - platform: template
+    name: "Zone 1 Timeout"
+    id: zone1_timeout_number
+    icon: "mdi:timer-outline"
+    optimistic: true
+    min_value: 1
+    max_value: 300
+    step: 1
+    unit_of_measurement: "s"
+    mode: box
+    set_action:
+      - globals.set:
+          id: zone1_timeout
+          value: !lambda "return x;"
+    
+  - platform: template
+    name: "Zone 1 Marge"
+    id: zone1_margin_number
+    icon: "mdi:margin"
+    optimistic: true
+    min_value: 10
+    max_value: 100
+    step: 5
+    unit_of_measurement: "cm"
+    mode: box
+    set_action:
+      - globals.set:
+          id: zone1_margin
+          value: !lambda "return x;"
+
+  - platform: template
+    name: "Zone 2 Timeout"
+    id: zone2_timeout_number
+    icon: "mdi:timer-outline"
+    optimistic: true
+    min_value: 1
+    max_value: 300
+    step: 1
+    unit_of_measurement: "s"
+    mode: box
+    set_action:
+      - globals.set:
+          id: zone2_timeout
+          value: !lambda "return x;"
+    
+  - platform: template
+    name: "Zone 2 Marge"
+    id: zone2_margin_number
+    icon: "mdi:margin"
+    optimistic: true
+    min_value: 10
+    max_value: 100
+    step: 5
+    unit_of_measurement: "cm"
+    mode: box
+    set_action:
+      - globals.set:
+          id: zone2_margin
+          value: !lambda "return x;"
+
+  - platform: template
+    name: "Zone 3 Timeout" 
+    id: zone3_timeout_number
+    icon: "mdi:timer-outline"
+    optimistic: true
+    min_value: 1
+    max_value: 300
+    step: 1
+    unit_of_measurement: "s"
+    mode: box
+    set_action:
+      - globals.set:
+          id: zone3_timeout
+          value: !lambda "return x;"
+    
+  - platform: template
+    name: "Zone 3 Marge"
+    id: zone3_margin_number
+    icon: "mdi:margin"
+    optimistic: true
+    min_value: 10
+    max_value: 100
+    step: 5
+    unit_of_measurement: "cm"
+    mode: box
+    set_action:
+      - globals.set:
+          id: zone3_margin
+          value: !lambda "return x;"
+
+# Zone UI - Layout presets
+select:
+  - platform: template
+    name: "Zone 1 Layout"
+    id: zone1_preset_select
+    icon: "mdi:shape-polygon-plus"
+    optimistic: true
+    options:
+      - "Hele Ruimte"
+      - "Rechts Voor"
+      - "Links Voor"
+      - "Custom"
+    initial_option: "Hele Ruimte"
+    set_action:
+      - lambda: |-
+          if (x == "Hele Ruimte") {
+            std::vector<std::pair<float,float>> points = {{100,350},{100,50},{-100,50},{-170,290}};
+            id(zone1_points) = points;
+          } else if (x == "Rechts Voor") {
+            std::vector<std::pair<float,float>> points = {{100,350},{100,200},{0,200},{0,350}};
+            id(zone1_points) = points;
+          } else if (x == "Links Voor") {
+            std::vector<std::pair<float,float>> points = {{0,350},{0,200},{-100,200},{-100,350}};
+            id(zone1_points) = points;
+          }
+
+  - platform: template
+    name: "Zone 2 Layout"
+    id: zone2_preset_select
+    icon: "mdi:shape-polygon-plus"
+    optimistic: true
+    options:
+      - "Hele Ruimte"
+      - "Rechts Voor"
+      - "Links Voor" 
+      - "Custom"
+    initial_option: "Rechts Voor"
+    set_action:
+      - lambda: |-
+          if (x == "Hele Ruimte") {
+            std::vector<std::pair<float,float>> points = {{100,350},{100,50},{-100,50},{-170,290}};
+            id(zone2_points) = points;
+          } else if (x == "Rechts Voor") {
+            std::vector<std::pair<float,float>> points = {{100,350},{100,200},{0,200},{0,350}};
+            id(zone2_points) = points;
+          } else if (x == "Links Voor") {
+            std::vector<std::pair<float,float>> points = {{0,350},{0,200},{-100,200},{-100,350}};
+            id(zone2_points) = points;
+          }
+
+  - platform: template
+    name: "Zone 3 Layout"
+    id: zone3_preset_select
+    icon: "mdi:shape-polygon-plus"
+    optimistic: true
+    options:
+      - "Hele Ruimte"
+      - "Rechts Voor"
+      - "Links Voor"
+      - "Custom"
+    initial_option: "Links Voor"
+    set_action:
+      - lambda: |-
+          if (x == "Hele Ruimte") {
+            std::vector<std::pair<float,float>> points = {{100,350},{100,50},{-100,50},{-170,290}};
+            id(zone3_points) = points;
+          } else if (x == "Rechts Voor") {
+            std::vector<std::pair<float,float>> points = {{100,350},{100,200},{0,200},{0,350}};
+            id(zone2_points) = points;
+          } else if (x == "Links Voor") {
+            std::vector<std::pair<float,float>> points = {{0,350},{0,200},{-100,200},{-100,350}};
+            id(zone3_points) = points;
+          }
+
+
+
+
