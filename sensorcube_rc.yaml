@@ -5,6 +5,11 @@ substitutions:
   hidden_ssid: "False"
   log_level: INFO
 
+esphome:
+  name: "${name}"
+  friendly_name: "${friendly_name}"
+  name_add_mac_suffix: true
+
 packages:
   device_base: !include components/sensorcube_base.yaml
   network_base: !include components/network.yaml
