@@ -1,14 +1,14 @@
 substitutions:
-  device_description: "${friendly_name} made by RFinkers"
+  device_description: "${friendly_name} made by Tweako"
 
 esphome:
   project:
-    name: "rfinkers.sensorcube"
-    version: "1.0.0"
+    name: "tweako.sensorcube"
+    version: "1.1.0"
   comment: "${device_description}"
 
 preferences:
-  flash_write_interval: 120min
+  flash_write_interval: 120min  # Reduce wear on flash memory by increasing write interval
 
 esp32:
   board: esp32-c3-devkitm-1
@@ -38,6 +38,7 @@ text_sensor:
 button:
   - platform: restart
     name: "Restart device"
+    id: restart_button
     entity_category: diagnostic
   - platform: factory_reset
     name: "Factory reset"

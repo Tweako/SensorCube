@@ -1,14 +1,70 @@
+# DHT22 sensor configuratie met verbeterde filters en kalibratie
+
+substitutions:
+  # Configureerbare sensor instellingen
+  dht22_update_interval: "60s"
+  dht22_temp_offset: "-1"        # Temperatuur correctie
+  dht22_temp_window_size: "5"    # Moving average venster
+  dht22_temp_send_every: "15"    # Verzend elke X samples
+  dht22_pin: "GPIO5"             # GPIO pin voor DHT22
+
 sensor:
   - platform: dht
-    pin: GPIO5
+    pin: ${dht22_pin}
     model: AM2302
     temperature:
       name: "Temperatuur"
+      id: dht22_temperature
       filters:
-        - offset: -1
+        - offset: ${dht22_temp_offset}
         - sliding_window_moving_average: # Smooth out the values
-            window_size: 5
-            send_every: 15
+            window_size: ${dht22_temp_window_size}
+            send_every: ${dht22_temp_send_every}
+        # Sanity check filters
+        - lambda: |-
+            if (x < -40.0 || x > 80.0) {
+              ESP_LOGW("dht22", "Temperatuur buiten bereik: %.1f°C", x);
+              return {};
+            }
+            return x;
     humidity:
       name: "Luchtvochtigheid"
-    update_interval: 60s
+      id: dht22_humidity
+      filters:
+        # Sanity check voor luchtvochtigheid
+        - lambda: |-
+            if (x < 0.0 || x > 100.0) {
+              ESP_LOGW("dht22", "Luchtvochtigheid buiten bereik: %.1f%%", x);
+              return {};
+            }
+            return x;
+        - sliding_window_moving_average: # Smooth out the values
+            window_size: 3
+            send_every: 3
+    update_interval: ${dht22_update_interval}
+
+  # - platform: template
+  #   name: "Gevoelstemperatuur"
+  #   id: heat_index
+  #   unit_of_measurement: "°C"
+  #   device_class: temperature
+  #   accuracy_decimals: 1
+  #   icon: "mdi:thermometer-alert"
+  #   lambda: |-
+  #     if (isnan(id(dht22_temperature).state) || isnan(id(dht22_humidity).state)) {
+  #       return {};
+  #     }
+  #     float temp = id(dht22_temperature).state;
+  #     float hum = id(dht22_humidity).state;
+      
+  #     // Heat index berekening (alleen boven 26°C relevant)
+  #     if (temp < 26.0) {
+  #       return temp;
+  #     }
+      
+  #     float hi = -8.78469475556 + 1.61139411 * temp + 2.33854883889 * hum;
+  #     hi += -0.14611605 * temp * hum + -0.012308094 * temp * temp;
+  #     hi += -0.0164248277778 * hum * hum + 0.002211732 * temp * temp * hum;
+  #     hi += 0.00072546 * temp * hum * hum + -0.000003582 * temp * temp * hum * hum;
+  #     return hi;
+  #   update_interval: 60s

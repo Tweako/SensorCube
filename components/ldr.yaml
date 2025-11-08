@@ -1,10 +1,101 @@
+# LDR (Light Dependent Resistor) sensor configuratie met verbeterde kalibratie
+
+substitutions:
+  # LDR configuratie instellingen
+  ldr_pin: "GPIO0"
+  ldr_update_interval: "30s"
+  ldr_attenuation: "0db"  # ADC attenuation (0db, 2.5db, 6db, 11db)
+  
+  # Kalibratie instellingen voor lux conversie
+  ldr_dark_voltage: "0.001"    # Voltage bij duisternis (V)
+  ldr_bright_voltage: "3.3"    # Voltage bij fel licht (V)
+  ldr_max_lux: "2000"          # Maximale lux waarde
+  ldr_gamma: "0.7"             # Gamma correctie voor responsiviteit
+
 sensor:
   - platform: adc
-    pin: GPIO0
+    pin: ${ldr_pin}
     name: "Lichtsterkte"
     id: illuminance
     device_class: illuminance
     unit_of_measurement: lx
+    accuracy_decimals: 0
+    update_interval: ${ldr_update_interval}
+    attenuation: ${ldr_attenuation}
     filters:
+      # Converteer voltage naar lux met verbeterde formule
       - lambda: |-
-          return (x / 10000.0) * 2000000.0;
+          // Verbeterde lux conversie met gamma correctie
+          float voltage = x;
+          float dark_v = ${ldr_dark_voltage};
+          float bright_v = ${ldr_bright_voltage};
+          float max_lux = ${ldr_max_lux};
+          float gamma = ${ldr_gamma};
+          
+          // Normaliseer voltage naar 0-1 bereik
+          float normalized = (voltage - dark_v) / (bright_v - dark_v);
+          normalized = fmax(0.0, fmin(1.0, normalized));
+          
+          // Gamma correctie toepassen
+          float corrected = pow(normalized, gamma);
+          
+          // Converteer naar lux
+          float lux = corrected * max_lux;
+          
+          // Debug logging
+          ESP_LOGD("ldr", "Voltage: %.3fV, Normalized: %.3f, Lux: %.0f", voltage, normalized, lux);
+          
+          return lux;
+      # Smoothing filter
+      - sliding_window_moving_average:
+          window_size: 5
+          send_every: 3
+      # Sanity check
+      - lambda: |-
+          if (x < 0) return 0;
+          if (x > ${ldr_max_lux}) return ${ldr_max_lux};
+          return x;
+
+  # Template sensor voor licht percentage
+  - platform: template
+    name: "Licht Percentage"
+    id: light_percentage
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    icon: "mdi:brightness-percent"
+    lambda: |-
+      if (isnan(id(illuminance).state)) {
+        return {};
+      }
+      float lux = id(illuminance).state;
+      float percentage = (lux / ${ldr_max_lux}) * 100.0;
+      return fmax(0.0, fmin(100.0, percentage));
+    update_interval: 60s
+
+# Binary sensors voor licht detectie
+binary_sensor:
+  - platform: template
+    name: "Daglicht"
+    id: daylight_detected
+    device_class: light
+    lambda: |-
+      if (isnan(id(illuminance).state)) {
+        return {};
+      }
+      // Daglicht gedetecteerd boven 50 lux
+      return id(illuminance).state > 50;
+
+# Number voor instelbare lux thresholds
+number:
+  - platform: template
+    name: "Daglicht Threshold"
+    id: daylight_threshold
+    entity_category: config
+    min_value: 10
+    max_value: 200
+    step: 10
+    initial_value: 50
+    restore_value: true
+    optimistic: true
+    icon: "mdi:weather-sunny"
+    unit_of_measurement: "lx"

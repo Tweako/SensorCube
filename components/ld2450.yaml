@@ -1,7 +1,3 @@
-# Externe component voor LD2450 mmWave sensor
-external_components:
-  - source: github://TillFleisch/ESPHome-HLK-LD2450@main
-
 # UART configuratie voor sensor communicatie
 uart:
   id: uart_ld2450
@@ -11,354 +7,123 @@ uart:
   parity: NONE
   stop_bits: 1
 
-# Zone configuratie globals
-globals:
-  # Zone timeouts (in seconden)
-  - id: zone1_timeout
-    type: int
-    initial_value: "60"
-  - id: zone2_timeout
-    type: int
-    initial_value: "60"
-  - id: zone3_timeout
-    type: int
-    initial_value: "60"
-
-  # Zone margins (in cm)
-  - id: zone1_margin
-    type: int
-    initial_value: "30"
-  - id: zone2_margin
-    type: int
-    initial_value: "30"
-  - id: zone3_margin
-    type: int
-    initial_value: "30"
-  
-  # Zone enable flags
-  - id: zone1_enabled
-    type: bool
-    initial_value: "true"  # Hele ruimte standaard aan
-  - id: zone2_enabled
-    type: bool
-    initial_value: "false"
-  - id: zone3_enabled
-    type: bool
-    initial_value: "false"
-
-  # Zone polygon points (x,y in cm)
-  - id: zone1_points
-    type: std::vector<std::pair<float,float>>
-    initial_value: "{{100,350},{100,50},{-100,50},{-170,290}}"  # Hele ruimte
-  - id: zone2_points
-    type: std::vector<std::pair<float,float>>
-    initial_value: "{{100,350},{100,200},{0,200},{0,350}}"      # Rechts voor
-  - id: zone3_points
-    type: std::vector<std::pair<float,float>>
-    initial_value: "{{0,350},{0,200},{-100,200},{-100,350}}"    # Links voor
-
-# LD2450 Basis configuratie
-LD2450:
+ld2450:
+  id: ld2450_radar
   uart_id: uart_ld2450
-  flip_x_axis: true
-  fast_off_detection: true
-  max_detection_tilt_angle:
-    name: "Max Tilt Hoek"
-    initial_value: 40°
-  min_detection_tilt_angle:
-    name: "Min Tilt Hoek"
-    initial_value: -40°
-  max_detection_distance:
-    name: "Max Afstand"
-    initial_value: 4m
-  max_distance_margin: 30cm
 
-  # Dynamische zones - configureerbaar via Home Assistant
-  zones:
-    - zone:
-        name: "Zone 1"
-        target_timeout: 60s
-        margin: 30cm
-        polygon:
-          - point: {x: 100cm, y: 350cm}
-          - point: {x: 100cm, y: 50cm}
-          - point: {x: -100cm, y: 50cm}
-          - point: {x: -170cm, y: 290cm}
-        occupancy:
-          id: z1_occupancy
-        target_count:
-          id: z1_target_count
-    
-    - zone:
-        name: "Zone 2"
-        target_timeout: 60s
-        margin: 30cm
-        polygon:
-          - point: {x: 100cm, y: 350cm}
-          - point: {x: 100cm, y: 200cm}
-          - point: {x: 0cm, y: 200cm}
-          - point: {x: 0cm, y: 350cm}
-        occupancy:
-          id: z2_occupancy
-        target_count:
-          id: z2_target_count
-
-    - zone:
-        name: "Zone 3"
-        target_timeout: 60s
-        margin: 30cm
-        polygon:
-          - point: {x: 0cm, y: 350cm}
-          - point: {x: 0cm, y: 200cm}
-          - point: {x: -100cm, y: 200cm}
-          - point: {x: -100cm, y: 350cm}
-        occupancy:
-          id: z3_occupancy
-        target_count:
-          id: z3_target_count
-
-  # Target tracking configuratie
-  targets:
-    - target:
-        id: t1
-        x_position:
-          id: t1_xpos
-        y_position:
-          id: t1_ypos
-        speed:
-          id: t1_speed
-        distance_resolution:
-          id: t1_res
-        angle:
-          id: t1_angle
-        distance:
-          id: t1_distance
-  
-  restart_button:
-    name: "Restart mmWave Sensor"
-  factory_reset_button:
-    name: "Factory reset mmWave Sensor"
-
-  tracking_mode_switch:
-    name: "Multiple Target Tracking"
-  occupancy:
-    name: "Bezetting"
-  target_count:
-    name: "Target Count"
-
-# Zone UI - Switches voor het activeren van zones
-switch:
-  - platform: template
-    name: "Zone 1 Actief"
-    id: zone1_switch
-    icon: "mdi:shape-polygon-plus"
-    optimistic: true
-    restore_mode: RESTORE_DEFAULT_ON
-    turn_on_action:
-      - globals.set:
-          id: zone1_enabled
-          value: "true"
-    turn_off_action:
-      - globals.set:
-          id: zone1_enabled
-          value: "false"
-
-  - platform: template
-    name: "Zone 2 Actief"
-    id: zone2_switch
-    icon: "mdi:shape-polygon-plus"
-    optimistic: true
-    restore_mode: RESTORE_DEFAULT_OFF
-    turn_on_action:
-      - globals.set:
-          id: zone2_enabled
-          value: "true"
-    turn_off_action:
-      - globals.set:
-          id: zone2_enabled
-          value: "false"
-
-  - platform: template
-    name: "Zone 3 Actief"
-    id: zone3_switch
-    icon: "mdi:shape-polygon-plus"
-    optimistic: true
-    restore_mode: RESTORE_DEFAULT_OFF
-    turn_on_action:
-      - globals.set:
-          id: zone3_enabled
-          value: "true"
-    turn_off_action:
-      - globals.set:
-          id: zone3_enabled
-          value: "false"
-
-# Zone UI - Timeout en marge instellingen
+# Numbers to configure zones and presence timeout from Home Assistant
 number:
-  - platform: template
-    name: "Zone 1 Timeout"
-    id: zone1_timeout_number
-    icon: "mdi:timer-outline"
-    optimistic: true
-    min_value: 1
-    max_value: 300
-    step: 1
-    unit_of_measurement: "s"
-    mode: box
-    set_action:
-      - globals.set:
-          id: zone1_timeout
-          value: !lambda "return x;"
-    
-  - platform: template
-    name: "Zone 1 Marge"
-    id: zone1_margin_number
-    icon: "mdi:margin"
-    optimistic: true
-    min_value: 10
-    max_value: 100
-    step: 5
-    unit_of_measurement: "cm"
-    mode: box
-    set_action:
-      - globals.set:
-          id: zone1_margin
-          value: !lambda "return x;"
+  - platform: ld2450
+    ld2450_id: ld2450_radar
+    presence_timeout:
+      name: "Aanwezigheid timeout"
+    zone_1:
+      x1:
+        name: "Zone 1 X1"
+      x2:
+        name: "Zone 1 X2"
+      y1:
+        name: "Zone 1 Y1"
+      y2:
+        name: "Zone 1 Y2"
+    zone_2:
+      x1:
+        name: "Zone 2 X1"
+      x2:
+        name: "Zone 2 X2"
+      y1:
+        name: "Zone 2 Y1"
+      y2:
+        name: "Zone 2 Y2"
+    zone_3:
+      x1:
+        name: "Zone 3 X1"
+      x2:
+        name: "Zone 3 X2"
+      y1:
+        name: "Zone 3 Y1"
+      y2:
+        name: "Zone 3 Y2"
 
-  - platform: template
-    name: "Zone 2 Timeout"
-    id: zone2_timeout_number
-    icon: "mdi:timer-outline"
-    optimistic: true
-    min_value: 1
-    max_value: 300
-    step: 1
-    unit_of_measurement: "s"
-    mode: box
-    set_action:
-      - globals.set:
-          id: zone2_timeout
-          value: !lambda "return x;"
-    
-  - platform: template
-    name: "Zone 2 Marge"
-    id: zone2_margin_number
-    icon: "mdi:margin"
-    optimistic: true
-    min_value: 10
-    max_value: 100
-    step: 5
-    unit_of_measurement: "cm"
-    mode: box
-    set_action:
-      - globals.set:
-          id: zone2_margin
-          value: !lambda "return x;"
+binary_sensor:
+  - platform: ld2450
+    ld2450_id: ld2450_radar
+    has_target:
+      name: "Aanwezigheid"
+    has_moving_target:
+      name: "Beweging"
+    has_still_target:
+      name: "Stilstaand"
 
-  - platform: template
-    name: "Zone 3 Timeout" 
-    id: zone3_timeout_number
-    icon: "mdi:timer-outline"
-    optimistic: true
-    min_value: 1
-    max_value: 300
-    step: 1
-    unit_of_measurement: "s"
-    mode: box
-    set_action:
-      - globals.set:
-          id: zone3_timeout
-          value: !lambda "return x;"
-    
-  - platform: template
-    name: "Zone 3 Marge"
-    id: zone3_margin_number
-    icon: "mdi:margin"
-    optimistic: true
-    min_value: 10
-    max_value: 100
-    step: 5
-    unit_of_measurement: "cm"
-    mode: box
-    set_action:
-      - globals.set:
-          id: zone3_margin
-          value: !lambda "return x;"
+switch:
+  - platform: ld2450
+    ld2450_id: ld2450_radar
+    bluetooth:
+      name: "LD2450 Bluetooth"
+      restore_mode: ALWAYS_OFF
+      disabled_by_default: true
+    multi_target:
+      name: "Multi Target Tracking"
 
-# Zone UI - Layout presets
 select:
-  - platform: template
-    name: "Zone 1 Layout"
-    id: zone1_preset_select
-    icon: "mdi:shape-polygon-plus"
-    optimistic: true
-    options:
-      - "Hele Ruimte"
-      - "Rechts Voor"
-      - "Links Voor"
-      - "Custom"
-    initial_option: "Hele Ruimte"
-    set_action:
-      - lambda: |-
-          if (x == "Hele Ruimte") {
-            std::vector<std::pair<float,float>> points = {{100,350},{100,50},{-100,50},{-170,290}};
-            id(zone1_points) = points;
-          } else if (x == "Rechts Voor") {
-            std::vector<std::pair<float,float>> points = {{100,350},{100,200},{0,200},{0,350}};
-            id(zone1_points) = points;
-          } else if (x == "Links Voor") {
-            std::vector<std::pair<float,float>> points = {{0,350},{0,200},{-100,200},{-100,350}};
-            id(zone1_points) = points;
-          }
+  - platform: ld2450
+    ld2450_id: ld2450_radar
+    zone_type:
+      name: "Zone Type"
 
-  - platform: template
-    name: "Zone 2 Layout"
-    id: zone2_preset_select
-    icon: "mdi:shape-polygon-plus"
-    optimistic: true
-    options:
-      - "Hele Ruimte"
-      - "Rechts Voor"
-      - "Links Voor" 
-      - "Custom"
-    initial_option: "Rechts Voor"
-    set_action:
-      - lambda: |-
-          if (x == "Hele Ruimte") {
-            std::vector<std::pair<float,float>> points = {{100,350},{100,50},{-100,50},{-170,290}};
-            id(zone2_points) = points;
-          } else if (x == "Rechts Voor") {
-            std::vector<std::pair<float,float>> points = {{100,350},{100,200},{0,200},{0,350}};
-            id(zone2_points) = points;
-          } else if (x == "Links Voor") {
-            std::vector<std::pair<float,float>> points = {{0,350},{0,200},{-100,200},{-100,350}};
-            id(zone2_points) = points;
-          }
+text_sensor:
+  - platform: ld2450
+    ld2450_id: ld2450_radar
+    version:
+      name: "LD2450 Firmware"
+      disabled_by_default: True
+    mac_address:
+      name: "LD2450 BT MAC"
+      disabled_by_default: True
+    target_1:
+      direction:
+        name: "Target Richting"
 
-  - platform: template
-    name: "Zone 3 Layout"
-    id: zone3_preset_select
-    icon: "mdi:shape-polygon-plus"
-    optimistic: true
-    options:
-      - "Hele Ruimte"
-      - "Rechts Voor"
-      - "Links Voor"
-      - "Custom"
-    initial_option: "Links Voor"
-    set_action:
-      - lambda: |-
-          if (x == "Hele Ruimte") {
-            std::vector<std::pair<float,float>> points = {{100,350},{100,50},{-100,50},{-170,290}};
-            id(zone3_points) = points;
-          } else if (x == "Rechts Voor") {
-            std::vector<std::pair<float,float>> points = {{100,350},{100,200},{0,200},{0,350}};
-            id(zone2_points) = points;
-          } else if (x == "Links Voor") {
-            std::vector<std::pair<float,float>> points = {{0,350},{0,200},{-100,200},{-100,350}};
-            id(zone3_points) = points;
-          }
-
-
-
-
+sensor:
+  - platform: ld2450
+    ld2450_id: ld2450_radar
+    target_count:
+      name: "Aantal personen"
+    still_target_count:
+      name: "Aantal stilstaand"
+    moving_target_count:
+      name: "Aantal bewegend"
+    target_1:
+      x:
+        name: "Target X"
+      y:
+        name: "Target Y"
+      speed:
+        name: "Target Snelheid"
+      angle:
+        name: "Target Hoek"
+      distance:
+        name: "Target Afstand"
+      resolution:
+        name: "Target Resolutie"
+    zone_1:
+      target_count:
+        name: Zone 1 Aantal
+      still_target_count:
+        name: Zone 1 Aantal stilstaand
+      moving_target_count:
+        name: Zone 1 Aantal bewegend
+    zone_2:
+      target_count:
+        name: Zone 2 Aantal
+      still_target_count:
+        name: Zone 2 Aantal stilstaand
+      moving_target_count:
+        name: Zone 2 Aantal bewegend
+    zone_3:
+      target_count:
+        name: Zone 3 Aantal
+      still_target_count:
+        name: Zone 3 Aantal stilstaand
+      moving_target_count:
+        name: Zone 3 Aantal bewegend

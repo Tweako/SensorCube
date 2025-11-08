@@ -1,0 +1,37 @@
+# Diagnostiek sensoren voor system monitoring en troubleshooting
+
+sensor:
+  # WiFi signaalsterkte
+  - platform: wifi_signal
+    name: "WiFi Signaal"
+    id: wifi_signal_sensor
+    update_interval: 60s
+    entity_category: diagnostic
+    icon: "mdi:wifi"
+    unit_of_measurement: "dBm"
+    accuracy_decimals: 0
+    
+  # ESP32 interne temperatuur
+  - platform: template
+    name: "ESP32 Temperatuur"
+    id: esp32_temperature
+    disabled_by_default: True
+    entity_category: diagnostic
+    unit_of_measurement: "°C"
+    device_class: temperature
+    accuracy_decimals: 1
+    icon: "mdi:thermometer"
+    lambda: |-
+      return temperatureRead();
+    update_interval: 30s
+    filters:
+      - sliding_window_moving_average:
+          window_size: 5
+          send_every: 5
+
+binary_sensor:
+  # Status van verbindingen
+  - platform: status
+    name: "Status"
+    id: system_status
+    entity_category: diagnostic

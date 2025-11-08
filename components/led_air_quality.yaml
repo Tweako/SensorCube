@@ -1,0 +1,79 @@
+# Herbruikbare LED Air Quality component
+# Deze component beheert de LED ring op basis van luchtkwaliteit
+
+substitutions:
+  # Configureerbare thresholds voor eCO2 niveaus
+  eco2_excellent: "600"    # Uitstekend (blauw)
+  eco2_good: "800"         # Goed (groen)
+  eco2_fair: "1000"        # Redelijk (geel)
+  eco2_poor: "1500"        # Slecht (oranje)
+  eco2_bad: "65000"        # Zeer slecht (rood met pulse)
+  
+  # LED helderheid instellingen
+  brightness_min: "0.05"   # Minimale helderheid (5%)
+  brightness_max: "0.50"   # Maximale helderheid (50%)
+  lux_scale_factor: "200.0" # Schaalfactor voor lichtintensiteit
+
+interval:
+  # Hoofd interval voor luchtkwaliteit monitoring
+  - interval: 60s
+    then:
+      if:
+        condition:
+          - wifi.connected # WiFi verbonden
+        then:
+          - if:
+              condition:
+                - lambda: 'return isnan(id(ens160_eco2).state);' # Check of eCO2 waarde beschikbaar is
+              then:
+                - light.turn_on:
+                    id: led_ring
+                    effect: "Rainbow Spinner"
+              else:
+                - lambda: |-
+                    auto call = id(led_ring).turn_on();
+                    
+                    // Bereken helderheid op basis van lichtintensiteit
+                    float brightness = (id(illuminance).state / ${lux_scale_factor}) * ${brightness_max} + ${brightness_min};
+                    brightness = fmax(${brightness_min}, fmin(1.0, brightness));
+                    call.set_brightness(brightness);
+
+                    float eco2 = id(ens160_eco2).state;
+
+                    // LED kleur op basis van eCO2 waarde
+                    if (eco2 < ${eco2_excellent}) { // Uitstekend
+                      call.set_effect("None");
+                      call.set_rgb(0, 0, 1);  // Blauw
+                    } else if (eco2 < ${eco2_good}) { // Goed
+                      call.set_effect("None");
+                      call.set_rgb(0, 1, 0);  // Groen
+                    } else if (eco2 < ${eco2_fair}) { // Redelijk
+                      call.set_effect("None");
+                      call.set_rgb(1, 1, 0);  // Geel
+                    } else if (eco2 < ${eco2_poor}) { // Slecht
+                      call.set_effect("None");
+                      call.set_rgb(1, 0.5, 0);  // Oranje
+                    } else if (eco2 < ${eco2_bad}) { // Zeer slecht
+                      call.set_rgb(1, 0, 0);  // Rood
+                      call.set_effect("Pulse");
+                    } else { // Extreem slecht
+                      call.set_rgb(1, 0, 0);  // Rood
+                      call.set_effect("Strobe");
+                    }
+
+                    call.perform();
+
+  # Snelle check interval voor responsiviteit
+  - interval: 5s
+    then:
+      - if:
+          condition:
+            - wifi.connected # WiFi verbonden
+          then:
+            - if:
+                condition:
+                  - lambda: 'return isnan(id(ens160_eco2).state);' # Check of eCO2 waarde beschikbaar is
+                then:
+                  - light.turn_on:
+                      id: led_ring
+                      effect: "Rainbow Spinner"
