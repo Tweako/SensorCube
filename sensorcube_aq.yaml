@@ -19,7 +19,11 @@ packages:
   ldr_base: !include components/ldr.yaml
   led_air_quality: !include components/led_air_quality.yaml
   diagnostics: !include components/diagnostics.yaml
-  update_base: !include components/update.yaml
+
+update:
+  - platform: http_request
+    name: "Firmware Update"
+    source: https://github.com/Tweako/SensorCube/releases/latest/download/sensorcube_aq.manifest.json
 
 # Air Quality specifieke configuratie - nu met volledige functionaliteit
 # Deze configuratie bevat alle luchtkwaliteit sensoren en functies

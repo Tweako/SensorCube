@@ -9,6 +9,10 @@ captive_portal:
 # Enable Home Assistant API
 api:
 
+# HTTP Request component vereist voor OTA updates via manifest
+http_request:
+  verify_ssl: false
+
 safe_mode:
 
 ota:

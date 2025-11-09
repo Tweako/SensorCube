@@ -2,7 +2,6 @@ remote_receiver:
   pin:
     number: GPIO1
     inverted: true
-  rmt_channel: 2
 
 binary_sensor:
   - platform: remote_receiver
