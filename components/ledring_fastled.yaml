@@ -1,3 +1,6 @@
+# LED Ring configuratie met FastLED (compatibel met remote_receiver)
+# FastLED gebruikt geen RMT driver en voorkomt conflicten met remote_receiver
+
 esphome:
   on_boot:
     priority: 600
@@ -10,14 +13,14 @@ esphome:
           effect: "Scan"
 
 light:
-  - platform: neopixelbus
-    type: GRB
-    variant: WS2811
-    gamma_correct: 1.5  # Adjust gamma correction
+  - platform: fastled_clockless
+    chipset: WS2811
     pin: GPIO4
     num_leds: ${num_leds}
+    rgb_order: GRB
     name: "LED ring"
     id: led_ring
+    gamma_correct: 1.5
     effects:
       - random:
       - random:

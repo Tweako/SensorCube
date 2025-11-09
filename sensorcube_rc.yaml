@@ -16,7 +16,7 @@ packages:
   dht22_base: !include components/dht22.yaml
   ens160_base: !include components/ens160.yaml
   ld2450_base: !include components/ld2450.yaml
-  ledring_base: !include components/ledring.yaml
+  ledring_base: !include components/ledring_fastled.yaml
   ldr_base: !include components/ldr.yaml
   remote_receiver_base: !include components/remote_receiver.yaml
   led_air_quality: !include components/led_air_quality.yaml
