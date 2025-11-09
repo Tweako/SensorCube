@@ -9,13 +9,16 @@ esphome:
   name: "${name}"
   friendly_name: "${friendly_name}"
   name_add_mac_suffix: true
+  project:
+    name: "tweako.sensorcube-aq"
+    version: "1.1.1"
 
 packages:
   device_base: !include components/sensorcube-base.yaml
   network_base: !include components/network.yaml
   dht22_base: !include components/dht22.yaml
   ens160_base: !include components/ens160.yaml
-  ledring_base: !include components/ledring.yaml
+  ledring_base: !include components/ledring-fastled.yaml
   ldr_base: !include components/ldr.yaml
   led_air_quality: !include components/led-air-quality.yaml
   diagnostics: !include components/diagnostics.yaml
