@@ -22,8 +22,8 @@ jobs:
       matrix:
         file:
           - sensorcube
-          - sensorcube_aq
-          - sensorcube_rc
+          - sensorcube-aq
+          - sensorcube-rc
         esphome-version:
           - stable
           - beta

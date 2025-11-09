@@ -14,8 +14,8 @@ jobs:
     with:
       files: |
         sensorcube.factory.yaml
-        sensorcube_aq.factory.yaml
-        sensorcube_rc.factory.yaml
+        sensorcube-aq.factory.yaml
+        sensorcube-rc.factory.yaml
       esphome-version: 2025.10.0
       combined-name: SensorCube
 

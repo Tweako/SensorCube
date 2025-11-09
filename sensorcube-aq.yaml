@@ -1,5 +1,5 @@
 substitutions:
-  name: sensorcube_aq
+  name: sensorcube-aq
   friendly_name: SensorCube Air Quality
   num_leds: "12" # Number of LEDs in the ring
   hidden_ssid: "False"
@@ -11,19 +11,19 @@ esphome:
   name_add_mac_suffix: true
 
 packages:
-  device_base: !include components/sensorcube_base.yaml
+  device_base: !include components/sensorcube-base.yaml
   network_base: !include components/network.yaml
   dht22_base: !include components/dht22.yaml
   ens160_base: !include components/ens160.yaml
   ledring_base: !include components/ledring.yaml
   ldr_base: !include components/ldr.yaml
-  led_air_quality: !include components/led_air_quality.yaml
+  led_air_quality: !include components/led-air-quality.yaml
   diagnostics: !include components/diagnostics.yaml
 
 update:
   - platform: http_request
     name: "Firmware Update"
-    source: https://github.com/Tweako/SensorCube/releases/latest/download/sensorcube_aq.manifest.json
+    source: https://github.com/Tweako/SensorCube/releases/latest/download/sensorcube-aq.manifest.json
 
 # Air Quality specifieke configuratie - nu met volledige functionaliteit
 # Deze configuratie bevat alle luchtkwaliteit sensoren en functies

@@ -1,5 +1,5 @@
 substitutions:
-  name: sensorcube_rc
+  name: sensorcube-rc
   friendly_name: SensorCube RC Receiver
   num_leds: "12" # Number of LEDs in the ring
   hidden_ssid: "False"
@@ -11,20 +11,20 @@ esphome:
   name_add_mac_suffix: true
 
 packages:
-  device_base: !include components/sensorcube_base.yaml
+  device_base: !include components/sensorcube-base.yaml
   network_base: !include components/network.yaml
   dht22_base: !include components/dht22.yaml
   ens160_base: !include components/ens160.yaml
   ld2450_base: !include components/ld2450.yaml
-  ledring_base: !include components/ledring_fastled.yaml
+  ledring_base: !include components/ledring-fastled.yaml
   ldr_base: !include components/ldr.yaml
-  remote_receiver_base: !include components/remote_receiver.yaml
-  led_air_quality: !include components/led_air_quality.yaml
+  remote_receiver_base: !include components/remote-receiver.yaml
+  led_air_quality: !include components/led-air-quality.yaml
   diagnostics: !include components/diagnostics.yaml
 
 update:
   - platform: http_request
     name: "Firmware Update"
-    source: https://github.com/Tweako/SensorCube/releases/latest/download/sensorcube_rc.manifest.json
+    source: https://github.com/Tweako/SensorCube/releases/latest/download/sensorcube-rc.manifest.json
 
 # SensorCube met Remote Control ondersteuning

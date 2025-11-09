@@ -1,5 +1,5 @@
 packages:
-  core: !include sensorcube_rc.yaml
+  core: !include sensorcube-rc.yaml
 
 esphome:
   project:
@@ -9,4 +9,4 @@ esphome:
 improv_serial:
 
 dashboard_import:
-  package_import_url: github://Tweako/sensorcube/sensorcube_rc.yaml@main
+  package_import_url: github://Tweako/sensorcube/sensorcube-rc.yaml@main
