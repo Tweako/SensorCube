@@ -12,8 +12,9 @@ api:
 safe_mode:
 
 ota:
-  platform: esphome
-  password: ""
+  - platform: esphome
+    password: ""
+  - platform: http_request
 
 web_server:
   port: 80

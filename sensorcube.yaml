@@ -20,5 +20,6 @@ packages:
   ldr_base: !include components/ldr.yaml
   led_air_quality: !include components/led_air_quality.yaml
   diagnostics: !include components/diagnostics.yaml
+  update_base: !include components/update.yaml
 
 # Standaard SensorCube configuratie met alle functies

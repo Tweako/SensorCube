@@ -21,5 +21,6 @@ packages:
   remote_receiver_base: !include components/remote_receiver.yaml
   led_air_quality: !include components/led_air_quality.yaml
   diagnostics: !include components/diagnostics.yaml
+  update_base: !include components/update.yaml
 
 # SensorCube met Remote Control ondersteuning

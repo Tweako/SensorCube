@@ -1,0 +1,5 @@
+# Automatische firmware update detectie via GitHub releases
+
+update:
+  - platform: http_request
+    name: "Firmware Update"
