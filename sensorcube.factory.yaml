@@ -11,7 +11,8 @@ improv_serial:
 safe_mode:
 
 ota:
-  password: ""
+  - platform: esphome
+    password: ""
 
 web_server:
   port: 80
