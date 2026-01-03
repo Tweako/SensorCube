@@ -1,19 +1,19 @@
-# DHT22 sensor configuratie met verbeterde filters en kalibratie
+# DHT22 sensor configuration with improved filters and calibration
 
 substitutions:
-  # Configureerbare sensor instellingen
+  # Configurable sensor settings
   dht22_update_interval: "60s"
-  dht22_temp_offset: "-1"        # Temperatuur correctie
-  dht22_temp_window_size: "5"    # Moving average venster
-  dht22_temp_send_every: "15"    # Verzend elke X samples
-  dht22_pin: "GPIO5"             # GPIO pin voor DHT22
+  dht22_temp_offset: "-1"        # Temperature offset
+  dht22_temp_window_size: "5"    # Moving average window size
+  dht22_temp_send_every: "15"    # Send every X samples
+  dht22_pin: "GPIO5"             # GPIO pin for DHT22
 
 sensor:
   - platform: dht
     pin: ${dht22_pin}
     model: AM2302
     temperature:
-      name: "Temperatuur"
+      name: "Temperature"
       id: dht22_temperature
       filters:
         - offset: ${dht22_temp_offset}
@@ -23,18 +23,18 @@ sensor:
         # Sanity check filters
         - lambda: |-
             if (x < -40.0 || x > 80.0) {
-              ESP_LOGW("dht22", "Temperatuur buiten bereik: %.1f°C", x);
+              ESP_LOGW("dht22", "Temperature out of range: %.1f°C", x);
               return {};
             }
             return x;
     humidity:
-      name: "Luchtvochtigheid"
+      name: "Humidity"
       id: dht22_humidity
       filters:
-        # Sanity check voor luchtvochtigheid
+        # Sanity check for humidity
         - lambda: |-
             if (x < 0.0 || x > 100.0) {
-              ESP_LOGW("dht22", "Luchtvochtigheid buiten bereik: %.1f%%", x);
+              ESP_LOGW("dht22", "Humidity out of range: %.1f%%", x);
               return {};
             }
             return x;

@@ -1,6 +1,0 @@
-packages:
-  core: !include sensorcube-aq.yaml
-
-esphome:
-  project:
-    version: dev

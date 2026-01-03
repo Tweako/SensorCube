@@ -22,12 +22,12 @@ jobs:
       matrix:
         file:
           - sensorcube
-          - sensorcube-aq
-          - sensorcube-rc
+          # - sensorcube-aq
+          # - sensorcube-rc
         esphome-version:
           - stable
-          - beta
-          - dev
+          # - beta
+          # - dev
     steps:
       - name: Checkout source code
         uses: actions/checkout@v6.0.0

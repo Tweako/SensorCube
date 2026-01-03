@@ -10,20 +10,15 @@ esphome:
           effect: "Scan"
 
 light:
-  - platform: neopixelbus
-    type: GRB
-    variant: WS2811
-    gamma_correct: 1.5  # Adjust gamma correction
+  - platform: esp32_rmt_led_strip
+    rgb_order: GRB
+    chipset: WS2812
+    gamma_correct: 1.5
     pin: GPIO4
     num_leds: ${num_leds}
     name: "LED ring"
     id: led_ring
     effects:
-      - random:
-      - random:
-          name: "Random Slow"
-          transition_length: 30s
-          update_interval: 30s
       - addressable_rainbow:
           name: "Rainbow Spinner"
           speed: 8
@@ -32,46 +27,76 @@ light:
           name: "Rainbow Fader"
           speed: 3
           width: "${num_leds}"
+      - random:
+          name: "Random Slow"
+          transition_length: 30s
+          update_interval: 30s
       - addressable_lambda:
           name: "Fire"
-          update_interval: 50ms
+          update_interval: 15ms
           lambda: |-
             int Cooling = 55;
             int Sparking = 110;
-            static byte heat[188];
+            static uint8_t heat[188];
             int cooldown;
 
-            for (int i = 0; i < it.size(); i++) {
-              cooldown = random(0, ((Cooling * 10) / it.size()) + 2);
+            // Step 1.  Cool down every cell a little
+            for( int i = 0; i < it.size(); i++) {
+              cooldown = rand() % (((Cooling * 10) / it.size()) + 2);
 
-              if (cooldown > heat[i]) {
-                heat[i] = 0;
+              if(cooldown>heat[i]) {
+                heat[i]=0;
               } else {
-                heat[i] = heat[i] - cooldown;
+                heat[i]=heat[i]-cooldown;
               }
             }
 
-            for (int k = it.size() - 1; k >= 2; k--) {
+            // Step 2.  Heat from each cell drifts 'up' and diffuses a little
+            for( int k= it.size() - 1; k >= 2; k--) {
               heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2]) / 3;
             }
 
-            if (random(255) < Sparking) {
-              int y = random(7);
-              heat[y] = heat[y] + random(160, 255);
+            // Step 3.  Randomly ignite new 'sparks' near the bottom
+            if( (rand() % 255) < Sparking ) {
+              int y = rand() % 7;
+              heat[y] = heat[y] + (rand() % 95) + 160;
             }
 
-            for (int Pixel = 0; Pixel < it.size(); Pixel++) {
-              byte t192 = round((heat[Pixel] / 255.0) * 191);
-              byte heatramp = (t192 & 0x3F) << 2;
+            // Step 4.  Convert heat to LED colors
+            for( int Pixel = 0; Pixel < it.size(); Pixel++) {
+              // Scale 'heat' down from 0-255 to 0-191
+              uint8_t t192 = round((heat[Pixel]/255.0)*191);
 
-              if (t192 > 0x80) {
+              // calculate ramp up from
+              uint8_t heatramp = t192 & 0x3F; // 0..63
+              heatramp <<= 2; // scale up to 0..252
+
+              // figure out which third of the spectrum we're in:
+              //this is where you can reverse the effect by switching the commented out lines in all 3 places.
+              if( t192 > 0x80) {                     // hottest
+                //it[it.size() - Pixel - 1] = Color(255, 255, heatramp);
                 it[Pixel] = Color(255, 255, heatramp);
-              } else if (t192 > 0x40) {
+              } else if( t192 > 0x40 ) {             // middle
+                //it[it.size() - Pixel - 1] = Color(255, heatramp, 0);
                 it[Pixel] = Color(255, heatramp, 0);
-              } else {
+              } else {                               // coolest
+                //it[it.size() - Pixel - 1] = Color(heatramp, 0, 0);
                 it[Pixel] = Color(heatramp, 0, 0);
               }
             }
+      - addressable_lambda:
+          name: "Expo Light"
+          update_interval: 16ms
+          lambda: |-
+            static int x = -400;
+            float y = 0.35+0.65*exp(-pow(x, 2)/49000);
+            int8_t r = ceil(current_color.r * y);
+            int8_t g = ceil(current_color.g * y);
+            int8_t b = ceil(current_color.b * y);
+            it.all() = Color(r,g,b);
+            x += 1;
+            if (x == 400)
+              x = -400;
       - addressable_lambda:
           name: "Wipe In"
           update_interval: 12ms
@@ -98,10 +123,12 @@ light:
               it[x] = Color::BLACK;
             }
       - addressable_random_twinkle:
+      - addressable_flicker:
       - addressable_fireworks:
       - addressable_twinkle:
       - addressable_scan:
       - addressable_color_wipe:
       - flicker:
       - strobe:
+      - random: 
       - pulse:

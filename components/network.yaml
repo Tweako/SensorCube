@@ -9,7 +9,7 @@ captive_portal:
 # Enable Home Assistant API
 api:
 
-# HTTP Request component vereist voor OTA updates via manifest
+# HTTP Request component required for OTA updates via manifest
 http_request:
   verify_ssl: false
 
@@ -33,7 +33,7 @@ time:
 sensor:
   - platform: template
     id: uptime_timestamp
-    name: "Online sinds"
+    name: "Online since"
     device_class: "timestamp"
     accuracy_decimals: 0
     update_interval: never

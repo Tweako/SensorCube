@@ -1,21 +1,21 @@
-# LDR (Light Dependent Resistor) sensor configuratie met verbeterde kalibratie
+# LDR (Light Dependent Resistor) sensor configuration with improved calibration
 
 substitutions:
-  # LDR configuratie instellingen
+  # LDR configuration settings
   ldr_pin: "GPIO0"
   ldr_update_interval: "30s"
   ldr_attenuation: "0db"  # ADC attenuation (0db, 2.5db, 6db, 11db)
   
-  # Kalibratie instellingen voor lux conversie
-  ldr_dark_voltage: "0.001"    # Voltage bij duisternis (V)
-  ldr_bright_voltage: "3.3"    # Voltage bij fel licht (V)
-  ldr_max_lux: "2000"          # Maximale lux waarde
-  ldr_gamma: "0.7"             # Gamma correctie voor responsiviteit
+  # Calibration settings for lux conversion
+  ldr_dark_voltage: "0.001"    # Voltage in darkness (V)
+  ldr_bright_voltage: "3.3"    # Voltage in bright light (V)
+  ldr_max_lux: "2000"          # Maximum lux value
+  ldr_gamma: "0.7"             # Gamma correction for responsiveness
 
 sensor:
   - platform: adc
     pin: ${ldr_pin}
-    name: "Lichtsterkte"
+    name: "Light Level"
     id: illuminance
     device_class: illuminance
     unit_of_measurement: lx
@@ -23,23 +23,23 @@ sensor:
     update_interval: ${ldr_update_interval}
     attenuation: ${ldr_attenuation}
     filters:
-      # Converteer voltage naar lux met verbeterde formule
+      # Convert voltage to lux with improved formula
       - lambda: |-
-          // Verbeterde lux conversie met gamma correctie
+          // Improved lux conversion with gamma correction
           float voltage = x;
           float dark_v = ${ldr_dark_voltage};
           float bright_v = ${ldr_bright_voltage};
           float max_lux = ${ldr_max_lux};
           float gamma = ${ldr_gamma};
           
-          // Normaliseer voltage naar 0-1 bereik
+          // Normalize voltage to 0-1 range
           float normalized = (voltage - dark_v) / (bright_v - dark_v);
           normalized = fmax(0.0, fmin(1.0, normalized));
           
-          // Gamma correctie toepassen
+          // Apply gamma correction
           float corrected = pow(normalized, gamma);
           
-          // Converteer naar lux
+          // Convert to lux
           float lux = corrected * max_lux;
           
           // Debug logging
@@ -56,9 +56,9 @@ sensor:
           if (x > ${ldr_max_lux}) return ${ldr_max_lux};
           return x;
 
-  # Template sensor voor licht percentage
+  # Template sensor for light percentage
   - platform: template
-    name: "Licht Percentage"
+    name: "Light Percentage"
     id: light_percentage
     unit_of_measurement: "%"
     accuracy_decimals: 0
@@ -72,23 +72,23 @@ sensor:
       return fmax(0.0, fmin(100.0, percentage));
     update_interval: 60s
 
-# Binary sensors voor licht detectie
+# Binary sensors for light detection
 binary_sensor:
   - platform: template
-    name: "Daglicht"
+    name: "Daylight"
     id: daylight_detected
     device_class: light
     lambda: |-
       if (isnan(id(illuminance).state)) {
         return {};
       }
-      // Daglicht gedetecteerd boven 50 lux
+      // Daylight detected above 50 lux
       return id(illuminance).state > 50;
 
-# Number voor instelbare lux thresholds
+# Number for configurable lux thresholds
 number:
   - platform: template
-    name: "Daglicht Threshold"
+    name: "Daylight Threshold"
     id: daylight_threshold
     entity_category: config
     min_value: 10

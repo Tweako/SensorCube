@@ -1,17 +1,17 @@
-# ENS160 Air Quality sensor met verbeterde kalibratie en documentatie
+# ENS160 Air Quality sensor with improved calibration and documentation
 
 substitutions:
-  # ENS160 configuratie
+  # ENS160 configuration
   ens160_address: "0x53"
   ens160_update_interval: "60s"
   
-  # AHT20 compensatie sensor configuratie
+  # AHT20 compensation sensor configuration
   aht20_address: "0x38"
-  aht20_temp_offset: "-7"  # Offset door warmte van ENS160
-  aht20_hum_offset: "5"    # Offset door warmte van ENS160
+  aht20_temp_offset: "-7"  # Offset due to ENS160 heat dissipation
+  aht20_hum_offset: "5"    # Offset due to ENS160 heat dissipation
   
-  # ENS160 kalibratie
-  ens160_eco2_offset: "-100"  # Gebaseerd op vergelijking met Sensirion SCD40
+  # ENS160 calibration
+  ens160_eco2_offset: "-100"  # Based on comparison with Sensirion SCD40
   ens160_eco2_window_size: "15"
   ens160_eco2_send_every: "15"
 
@@ -20,7 +20,7 @@ sensor:
     address: ${ens160_address}
     update_interval: ${ens160_update_interval}
     aqi:
-      name: "Luchtkwaliteit Index"
+      name: "Air Quality Index"
       id: ens160_aqi
       icon: "mdi:air-filter"
       entity_category: ""
@@ -30,17 +30,17 @@ sensor:
       icon: "mdi:molecule-co2"
       entity_category: ""
       filters:
-        - offset: ${ens160_eco2_offset} # Gebaseerd op vergelijking met Sensirion SCD40
+        - offset: ${ens160_eco2_offset} # Based on comparison with Sensirion SCD40
         - sliding_window_moving_average: # Smooth out the values
             window_size: ${ens160_eco2_window_size}
             send_every: ${ens160_eco2_send_every}
         - lambda: |-
-            // Zorg ervoor dat eCO2 niet negatief wordt
+            // Ensure eCO2 does not become negative
             if (x < 0) {
               return 0;
             } else if (x > 65000) {
-              // Cap extreme waarden
-              ESP_LOGW("ens160", "eCO2 waarde zeer hoog: %.0f ppm", x);
+              // Cap extreme values
+              ESP_LOGW("ens160", "eCO2 value very high: %.0f ppm", x);
               return 65000;
             } else {
               return x;
@@ -52,9 +52,9 @@ sensor:
       entity_category: ""
       filters:
         - lambda: |-
-            // Sanity check voor TVOC waarden
+            // Sanity check for TVOC values
             if (x < 0 || x > 65000) {
-              ESP_LOGW("ens160", "TVOC waarde buiten bereik: %.0f ppb", x);
+              ESP_LOGW("ens160", "TVOC value out of range: %.0f ppb", x);
               return {};
             }
             return x;
@@ -62,7 +62,7 @@ sensor:
       temperature: id_temperature_sensor
       humidity: id_humidity_sensor
       
-  # AHT20 sensor voor temperatuur en luchtvochtigheid compensatie
+  # AHT20 sensor for temperature and humidity compensation
   - platform: aht10
     variant: AHT20
     address: ${aht20_address}
@@ -72,10 +72,10 @@ sensor:
       name: "ENS160+AHT20 Temperature"
       internal: true
       filters:
-        - offset: ${aht20_temp_offset} # Offset door warmte van ENS160
+        - offset: ${aht20_temp_offset} # Offset due to ENS160 heat dissipation
         - lambda: |-
             if (x < -40.0 || x > 80.0) {
-              ESP_LOGW("aht20", "Temperatuur buiten bereik: %.1f°C", x);
+              ESP_LOGW("aht20", "Temperature out of range: %.1f°C", x);
               return {};
             }
             return x;
@@ -84,37 +84,37 @@ sensor:
       name: "ENS160+AHT20 Humidity"
       internal: true
       filters:
-        - offset: ${aht20_hum_offset} # Offset door warmte van ENS160
+        - offset: ${aht20_hum_offset} # Offset due to ENS160 heat dissipation
         - lambda: |-
             if (x < 0.0 || x > 100.0) {
-              ESP_LOGW("aht20", "Luchtvochtigheid buiten bereik: %.1f%%", x);
+              ESP_LOGW("aht20", "Humidity out of range: %.1f%%", x);
               return {};
             }
             return x;
 
-# Text sensor voor leesbare luchtkwaliteit status
+# Text sensor for readable air quality status
 text_sensor:
   - platform: template
-    name: "Luchtkwaliteit"
+    name: "Air Quality"
     id: air_quality_description
     icon: "mdi:air-filter"
     lambda: |-
       if (isnan(id(ens160_aqi).state)) {
-        return {"Onbekend"};
+        return {"Unknown"};
       }
       int aqi = (int)id(ens160_aqi).state;
       
       if (aqi == 1) {
-        return {"Uitstekend"};
+        return {"Excellent"};
       } else if (aqi == 2) {
-        return {"Goed"};
+        return {"Good"};
       } else if (aqi == 3) {
-        return {"Matig"};
+        return {"Fair"};
       } else if (aqi == 4) {
-        return {"Slecht"};
+        return {"Poor"};
       } else if (aqi == 5) {
-        return {"Ongezond"};
+        return {"Unhealthy"};
       } else {
-        return {"Onbekend"};
+        return {"Unknown"};
       }
     update_interval: 60s

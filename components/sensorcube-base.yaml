@@ -10,11 +10,11 @@ preferences:
 esp32:
   board: esp32-c3-devkitm-1
   framework:
-    type: arduino
+    type: esp-idf
 
 logger:
   level: ${log_level}
-  # baud_rate: 0  # Disable logging over UART (improv_serial require the logger to be enabled)
+  baud_rate: ${logger_baud_rate}  # Disable logging over UART by default; required for improv_serial
 
 safe_mode:
 

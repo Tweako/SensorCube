@@ -1,4 +1,4 @@
-# UART configuratie voor sensor communicatie
+# UART configuration for sensor communication
 uart:
   id: uart_ld2450
   tx_pin: GPIO20
@@ -6,6 +6,7 @@ uart:
   baud_rate: 256000
   parity: NONE
   stop_bits: 1
+  rx_buffer_size: 512
 
 ld2450:
   id: ld2450_radar
@@ -16,7 +17,7 @@ number:
   - platform: ld2450
     ld2450_id: ld2450_radar
     presence_timeout:
-      name: "Aanwezigheid timeout"
+      name: "Presence timeout"
     zone_1:
       x1:
         name: "Zone 1 X1"
@@ -49,12 +50,11 @@ binary_sensor:
   - platform: ld2450
     ld2450_id: ld2450_radar
     has_target:
-      name: "Aanwezigheid"
+      name: "Presence"
     has_moving_target:
-      name: "Beweging"
+      name: "Movement"
     has_still_target:
-      name: "Stilstaand"
-
+      name: "Stationary"
 switch:
   - platform: ld2450
     ld2450_id: ld2450_radar
@@ -82,48 +82,48 @@ text_sensor:
       disabled_by_default: True
     target_1:
       direction:
-        name: "Target Richting"
+        name: "Target Direction"
 
 sensor:
   - platform: ld2450
     ld2450_id: ld2450_radar
     target_count:
-      name: "Aantal personen"
+      name: "Target count"
     still_target_count:
-      name: "Aantal stilstaand"
+      name: "Still Target Count"
     moving_target_count:
-      name: "Aantal bewegend"
+      name: "Moving Target Count"
     target_1:
       x:
         name: "Target X"
       y:
         name: "Target Y"
       speed:
-        name: "Target Snelheid"
+        name: "Target Speed"
       angle:
-        name: "Target Hoek"
+        name: "Target Angle"
       distance:
-        name: "Target Afstand"
+        name: "Target Distance"
       resolution:
-        name: "Target Resolutie"
+        name: "Target Resolution"
     zone_1:
       target_count:
-        name: Zone 1 Aantal
+        name: "Zone 1 Count"
       still_target_count:
-        name: Zone 1 Aantal stilstaand
+        name: "Zone 1 Still Target Count"
       moving_target_count:
-        name: Zone 1 Aantal bewegend
+        name: "Zone 1 Moving Target Count"
     zone_2:
       target_count:
-        name: Zone 2 Aantal
+        name: "Zone 2 Count"
       still_target_count:
-        name: Zone 2 Aantal stilstaand
+        name: "Zone 2 Still Target Count"
       moving_target_count:
-        name: Zone 2 Aantal bewegend
+        name: "Zone 2 Moving Target Count"
     zone_3:
       target_count:
-        name: Zone 3 Aantal
+        name: "Zone 3 Count"
       still_target_count:
-        name: Zone 3 Aantal stilstaand
+        name: "Zone 3 Still Target Count"
       moving_target_count:
-        name: Zone 3 Aantal bewegend
+        name: "Zone 3 Moving Target Count"

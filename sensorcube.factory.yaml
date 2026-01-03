@@ -1,6 +1,9 @@
 packages:
   core: !include sensorcube.yaml
 
+substitutions:
+  logger_baud_rate: "115200"
+
 esphome:
   project:
     version: dev
