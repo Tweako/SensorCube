@@ -14,7 +14,7 @@ jobs:
     with:
       files: |
         sensorcube.factory.yaml
-      esphome-version: 2025.10.0
+      esphome-version: 2025.12.4
       combined-name: SensorCube
 
       release-summary: ${{ github.event.release.body }}
