@@ -84,7 +84,7 @@ Current calibration values (keep the explaining comments when changing them):
 ### Entity categorisation
 - `entity_category: diagnostic` for WiFi signal, status, uptime/"Online since", restart/factory reset/safe mode buttons.
 - `entity_category: config` for user-tunable numbers (e.g. "Daylight Threshold").
-- No `entity_category` for primary measurements.
+- No `entity_category` for primary measurements and for "Ventilation Needed" (ON at ≥ "Ventilation Threshold", OFF below threshold − `ventilation_hysteresis`).
 - `entity_category: config` also for the "LED Air Quality Indicator" switch.
 - `disabled_by_default: true` for advanced or risky entities (factory reset, safe mode, ESP32 temperature, LD2450 firmware/BT MAC, LD2450 Bluetooth).
 - `internal: true` for helper sensors that should not be exposed (AHT20 compensation sensors).
@@ -113,16 +113,20 @@ Check these before removing or renaming IDs or packages:
 - `network.yaml`'s `uptime_timestamp` ("Online since") is updated from the `on_time_sync` of both `time_homeassistant` and `time_sntp`, and computed once per boot.
 - `ledring.yaml` needs the root substitution `num_leds`.
 - `sensorcube-base.yaml` needs root substitutions `friendly_name`, `log_level`, `logger_baud_rate`.
-- `ld2450.yaml` and `diagnostics.yaml` are standalone.
+- `led-air-quality.yaml` also needs `ld2450_presence` (ld2450) for night mode.
+- `ens160.yaml`'s "Ventilation Needed" uses `ens160_eco2` and the `ventilation_threshold` number from the same file.
+- `ld2450.yaml` and `diagnostics.yaml` don't depend on other components.
 
 ## LED air quality behaviour
 
-`led-air-quality.yaml` runs the `led_aq_update` script every `led_aq_check_interval` (5 s). It works out a state and only calls `led_ring` when the state or brightness changes. That way a manual change from Home Assistant stays until the air quality changes.
+`led-air-quality.yaml` runs the `led_aq_update` script every `led_aq_check_interval` (2 s). It works out a state and only calls `led_ring` when the state or brightness changes. That way a manual change from Home Assistant stays until the air quality changes.
 - eCO2 unavailable → "Rainbow Spinner" (online) or dim yellow "Pulse" (offline).
 - No WiFi but valid eCO2 → air quality colour with the first and last LED blinking yellow ("No WiFi Indicator" effect; red Pulse/Strobe are not shown while offline).
 - `< eco2_excellent` (600) blue, `< eco2_good` (800) green, `< eco2_fair` (1000) yellow, `< eco2_poor` (1500) orange, `< eco2_bad` (65000) red + "Pulse", otherwise red + "Strobe".
 - Brightness = `illuminance / lux_scale_factor * brightness_max + brightness_min`, clamped to `[brightness_min, brightness_max]` (falls back to `brightness_min` if illuminance is unavailable).
 - The `led_aq_enabled` switch ("LED Air Quality Indicator", restored, default on) turns the automation off and switches the ring off. After that the ring is fully under manual control.
+- eCO2 thresholds and min/max brightness are template `number` entities ("LED Threshold …", "LED Brightness Min/Max", category config, restored); the substitutions are only their initial values. Changing one forces a refresh.
+- Night mode ("LED Night Mode" switch, default on): ring off when illuminance < "LED Night Light Level" (back on above it + `led_night_lux_hysteresis`), or when `ld2450_presence` has been off for "LED Off Without Presence" minutes (0 = disabled). The LED ring does not measurably affect the LDR reading (tested).
 - On boot `ledring.yaml` shows a blue "Scan" effect; the interval has a `startup_delay` (10 s), and its first run always applies the state. Don't call `led_aq_update` from the switch's `on_turn_on`: that also fires on restore during setup, before `on_boot`.
 - Note: eCO2 (window 15 × 60 s) and DHT22 temperature (send every 15 × 60 s) are block-averaged, so they publish roughly every 15 minutes.
 

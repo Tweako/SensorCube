@@ -15,6 +15,10 @@ substitutions:
   ens160_eco2_window_size: "15"
   ens160_eco2_send_every: "15"
 
+  # Ventilation advice (initial threshold, adjustable via number entity)
+  ventilation_threshold: "1000"  # ppm eCO2
+  ventilation_hysteresis: "100"  # Turns off below threshold - hysteresis
+
 sensor:
   - platform: ens160_i2c
     address: ${ens160_address}
@@ -115,3 +119,38 @@ text_sensor:
         return {"Unknown"};
       }
     update_interval: 60s
+
+# Ventilation advice for automations (e.g. notification or ventilation fan)
+number:
+  - platform: template
+    name: "Ventilation Threshold"
+    id: ventilation_threshold
+    icon: "mdi:window-open-variant"
+    entity_category: config
+    unit_of_measurement: "ppm"
+    min_value: 0
+    max_value: 5000
+    step: 50
+    initial_value: ${ventilation_threshold}
+    restore_value: true
+    optimistic: true
+
+binary_sensor:
+  - platform: template
+    name: "Ventilation Needed"
+    id: ventilation_needed
+    icon: "mdi:window-open-variant"
+    lambda: |-
+      // Hysteresis prevents toggling around the threshold
+      static bool needed = false;
+      float eco2 = id(ens160_eco2).state;
+      if (isnan(eco2)) {
+        return {};
+      }
+      float threshold = id(ventilation_threshold).state;
+      if (!needed && eco2 >= threshold) {
+        needed = true;
+      } else if (needed && eco2 < threshold - ${ventilation_hysteresis}) {
+        needed = false;
+      }
+      return needed;

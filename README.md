@@ -74,7 +74,9 @@ De LED ring toont automatisch de luchtkwaliteit:
 
 De helderheid past zich aan het omgevingslicht aan (5–50%). Met de schakelaar
 **LED Air Quality Indicator** in Home Assistant zet je de automatische kleuren uit,
-zodat je de LED ring zelf kunt bedienen (of 's nachts uit kunt laten).
+zodat je de LED ring zelf kunt bedienen. Alle kleurgrenzen en de helderheid zijn in Home Assistant
+aan te passen. Met **LED Night Mode** gaat de ring uit als het donker is (standaard < 5 lx)
+of als er 15 minuten niemand aanwezig is; zodra er weer iemand binnenkomt gaat hij weer aan.
 
 ### GPIO Pin Assignment
 ```
@@ -114,6 +116,7 @@ SensorCube/
 - eCO2, TVOC, Air Quality Index met beschrijvingen
 - Lichtintensiteit met percentage en niveau beschrijvingen
 - Beweging, Aanwezigheid, Aantal personen (LD2450)
+- Ventilation Needed: aan boven de ingestelde eCO2 grens (handig voor meldingen of een ventilator)
 - WiFi signaal, ESP32 temperatuur, Online sinds (via Home Assistant of NTP tijd)
 
 
@@ -121,6 +124,10 @@ SensorCube/
 - Restart, Factory reset, Safe mode
 - LD2450 Bluetooth toggle
 - LED Air Quality Indicator (automatische LED kleuren aan/uit)
+- LED Night Mode: ring uit als het donker is of als er een tijd niemand aanwezig is
+- LED Night Light Level / LED Off Without Presence (instellingen nachtmodus)
+- LED Threshold Excellent/Good/Fair/Poor en LED Brightness Min/Max (kleurgrenzen en helderheid)
+- Ventilation Threshold (grens voor ventilatie-advies)
 - Daylight Threshold (lux grens voor dag/nacht detectie)
 
 ## 🔄 Updates & Onderhoud

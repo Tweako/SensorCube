@@ -1,6 +1,7 @@
 # LED Air Quality component
 # Drives the LED ring from the eCO2 level (colour) and ambient light (brightness).
-# Requires: ens160_eco2 (ens160.yaml), illuminance (ldr.yaml), led_ring (ledring.yaml)
+# Requires: ens160_eco2 (ens160.yaml), illuminance (ldr.yaml), ld2450_presence
+# (ld2450.yaml), led_ring + "No WiFi Indicator" effect (ledring.yaml)
 #
 # States:
 #   eCO2 thresholds    -> blue / green / yellow / orange / red "Pulse" / red "Strobe"
@@ -8,24 +9,35 @@
 #   no WiFi            -> air quality colour with the first and last LED blinking yellow
 #                         ("No WiFi Indicator" effect); dim yellow "Pulse" if
 #                         there is no eCO2 value either
+#   night mode         -> ring off when it is dark, or when nobody has been
+#                         present for a while (LD2450); back on with presence/light
+#
+# Thresholds and brightness are adjustable from Home Assistant (number entities,
+# category "config"); the substitutions below are their initial values.
 #
 # The ring is only updated when the state or brightness changes, so manual control
-# from Home Assistant is kept until the air quality changes. Turn off the
+# from Home Assistant is kept until the state changes. Turn off the
 # "LED Air Quality Indicator" switch to disable the automation entirely.
 
 substitutions:
-  # Configurable thresholds for eCO2 levels (ppm)
-  eco2_excellent: "600"    # Excellent (blue)
-  eco2_good: "800"         # Good (green)
-  eco2_fair: "1000"        # Fair (yellow)
-  eco2_poor: "1500"        # Poor (orange)
-  eco2_bad: "65000"        # Very poor (red, pulse); at or above: red strobe
+  # Initial eCO2 thresholds (ppm), adjustable via number entities
+  eco2_excellent: "600"    # Below: excellent (blue)
+  eco2_good: "800"         # Below: good (green)
+  eco2_fair: "1000"        # Below: fair (yellow)
+  eco2_poor: "1500"        # Below: poor (orange); above: very poor (red, pulse)
+  eco2_bad: "65000"        # At or above: red strobe (sensor maximum)
 
-  # LED brightness settings
-  brightness_min: "0.05"    # Minimum brightness (5%)
-  brightness_max: "0.50"    # Maximum brightness (50%)
-  lux_scale_factor: "200.0" # Lux at which brightness_max is (almost) reached
-  led_aq_check_interval: "5s"
+  # Initial LED brightness (%), adjustable via number entities
+  brightness_min: "5"
+  brightness_max: "50"
+  lux_scale_factor: "200.0" # Lux at which the maximum brightness is (almost) reached
+
+  # Initial night mode settings
+  led_night_lux: "5"          # Ring off below this light level (lx); 0 = never
+  led_night_lux_hysteresis: "3" # Back on above threshold + this (lx)
+  led_no_presence_minutes: "15" # Ring off after this many minutes without presence; 0 = never
+
+  led_aq_check_interval: "2s"
   led_aq_startup_delay: "10s" # Let the boot animation play first
   led_no_wifi_effect: "No WiFi Indicator" # Effect from ledring.yaml
 
@@ -36,6 +48,9 @@ globals:
   - id: led_aq_last_brightness
     type: float
     initial_value: "-1.0"
+  - id: led_last_presence_ms
+    type: uint32_t
+    initial_value: "0"
 
 switch:
   - platform: template
@@ -52,6 +67,128 @@ switch:
     on_turn_off:
       - lambda: "id(led_aq_last_state) = -2;"  # Off; leave the ring to the user
       - light.turn_off: led_ring
+
+  - platform: template
+    name: "LED Night Mode"
+    id: led_night_mode
+    icon: "mdi:weather-night"
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    on_turn_on:
+      - lambda: "id(led_aq_last_state) = -1;"
+    on_turn_off:
+      - lambda: "id(led_aq_last_state) = -1;"
+
+number:
+  - platform: template
+    name: "LED Threshold Excellent"
+    id: led_eco2_excellent
+    icon: "mdi:molecule-co2"
+    entity_category: config
+    unit_of_measurement: "ppm"
+    min_value: 0
+    max_value: 5000
+    step: 50
+    initial_value: ${eco2_excellent}
+    restore_value: true
+    optimistic: true
+    on_value:
+      - lambda: "id(led_aq_last_state) = -1;"
+  - platform: template
+    name: "LED Threshold Good"
+    id: led_eco2_good
+    icon: "mdi:molecule-co2"
+    entity_category: config
+    unit_of_measurement: "ppm"
+    min_value: 0
+    max_value: 5000
+    step: 50
+    initial_value: ${eco2_good}
+    restore_value: true
+    optimistic: true
+    on_value:
+      - lambda: "id(led_aq_last_state) = -1;"
+  - platform: template
+    name: "LED Threshold Fair"
+    id: led_eco2_fair
+    icon: "mdi:molecule-co2"
+    entity_category: config
+    unit_of_measurement: "ppm"
+    min_value: 0
+    max_value: 5000
+    step: 50
+    initial_value: ${eco2_fair}
+    restore_value: true
+    optimistic: true
+    on_value:
+      - lambda: "id(led_aq_last_state) = -1;"
+  - platform: template
+    name: "LED Threshold Poor"
+    id: led_eco2_poor
+    icon: "mdi:molecule-co2"
+    entity_category: config
+    unit_of_measurement: "ppm"
+    min_value: 0
+    max_value: 5000
+    step: 50
+    initial_value: ${eco2_poor}
+    restore_value: true
+    optimistic: true
+    on_value:
+      - lambda: "id(led_aq_last_state) = -1;"
+  - platform: template
+    name: "LED Brightness Min"
+    id: led_brightness_min
+    icon: "mdi:brightness-4"
+    entity_category: config
+    unit_of_measurement: "%"
+    min_value: 1
+    max_value: 100
+    step: 1
+    initial_value: ${brightness_min}
+    restore_value: true
+    optimistic: true
+    on_value:
+      - lambda: "id(led_aq_last_state) = -1;"
+  - platform: template
+    name: "LED Brightness Max"
+    id: led_brightness_max
+    icon: "mdi:brightness-7"
+    entity_category: config
+    unit_of_measurement: "%"
+    min_value: 1
+    max_value: 100
+    step: 1
+    initial_value: ${brightness_max}
+    restore_value: true
+    optimistic: true
+    on_value:
+      - lambda: "id(led_aq_last_state) = -1;"
+  - platform: template
+    name: "LED Night Light Level"
+    id: led_night_lux_threshold
+    icon: "mdi:weather-night"
+    entity_category: config
+    unit_of_measurement: "lx"
+    min_value: 0
+    max_value: 200
+    step: 1
+    initial_value: ${led_night_lux}
+    restore_value: true
+    optimistic: true
+  - platform: template
+    name: "LED Off Without Presence"
+    id: led_no_presence_timeout
+    icon: "mdi:account-off"
+    entity_category: config
+    unit_of_measurement: "min"
+    min_value: 0
+    max_value: 240
+    step: 1
+    initial_value: ${led_no_presence_minutes}
+    restore_value: true
+    optimistic: true
 
 script:
   - id: led_aq_update
@@ -76,26 +213,57 @@ script:
             return;
           }
 
+          const uint32_t now = millis();
+          if (id(ld2450_presence).has_state() && id(ld2450_presence).state) {
+            id(led_last_presence_ms) = now;
+          }
+
+          // Night mode: dark (with hysteresis) or nobody present for a while
+          static bool dark = false;
+          float lux = id(illuminance).state;
+          float night_lux = id(led_night_lux_threshold).state;
+          if (isnan(lux) || night_lux <= 0) {
+            dark = false;
+          } else if (dark && lux > night_lux + ${led_night_lux_hysteresis}) {
+            dark = false;
+          } else if (!dark && lux < night_lux) {
+            dark = true;
+          }
+          float timeout_min = id(led_no_presence_timeout).state;
+          bool absent = timeout_min > 0 &&
+                        (now - id(led_last_presence_ms)) > (uint32_t) (timeout_min * 60000.0f);
+          if (id(led_night_mode).state && (dark || absent)) {
+            if (id(led_aq_last_state) != -3) {
+              id(led_aq_last_state) = -3;
+              ESP_LOGI("led_aq", "Night mode: LED ring off (%s)", dark ? "dark" : "no presence");
+              auto off = id(led_ring).turn_off();
+              off.perform();
+            }
+            return;
+          }
+
           bool online = wifi::global_wifi_component->is_connected();
 
           // Air quality level: 0 = no eCO2 value (yet), 1..6 = excellent..extremely poor
           int level = 0;
           if (!isnan(id(ens160_eco2).state)) {
             float eco2 = id(ens160_eco2).state;
-            if (eco2 < ${eco2_excellent}) level = 1;
-            else if (eco2 < ${eco2_good}) level = 2;
-            else if (eco2 < ${eco2_fair}) level = 3;
-            else if (eco2 < ${eco2_poor}) level = 4;
+            if (eco2 < id(led_eco2_excellent).state) level = 1;
+            else if (eco2 < id(led_eco2_good).state) level = 2;
+            else if (eco2 < id(led_eco2_fair).state) level = 3;
+            else if (eco2 < id(led_eco2_poor).state) level = 4;
             else if (eco2 < ${eco2_bad}) level = 5;
             else level = 6;
           }
           int state = level + (online ? 0 : 10);
 
           // Brightness based on ambient light, limited to [min, max]
-          float brightness = ${brightness_min};
-          if (!isnan(id(illuminance).state)) {
-            brightness = (id(illuminance).state / ${lux_scale_factor}) * ${brightness_max} + ${brightness_min};
-            brightness = fmaxf(${brightness_min}, fminf(${brightness_max}, brightness));
+          float b_min = id(led_brightness_min).state / 100.0f;
+          float b_max = fmaxf(b_min, id(led_brightness_max).state / 100.0f);
+          float brightness = b_min;
+          if (!isnan(lux)) {
+            brightness = (lux / ${lux_scale_factor}) * b_max + b_min;
+            brightness = fmaxf(b_min, fminf(b_max, brightness));
           }
 
           // Only update the LED ring when something actually changed
@@ -115,7 +283,7 @@ script:
               } else {
                 // Nothing to show: dim yellow pulse = not connected
                 call.set_rgb(1, 1, 0);
-                call.set_brightness(${brightness_min});
+                call.set_brightness(b_min);
                 call.set_effect("Pulse");
               }
               break;

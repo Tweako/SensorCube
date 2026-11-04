@@ -53,6 +53,7 @@ binary_sensor:
     ld2450_id: ld2450_radar
     has_target:
       name: "Presence"
+      id: ld2450_presence  # Used by led-air-quality.yaml (night mode)
     has_moving_target:
       name: "Movement"
     has_still_target:
