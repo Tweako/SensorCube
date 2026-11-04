@@ -23,12 +23,10 @@ sensor:
       name: "Air Quality Index"
       id: ens160_aqi
       icon: "mdi:air-filter"
-      entity_category: ""
     eco2:
       name: "eCO2"
       id: ens160_eco2
       icon: "mdi:molecule-co2"
-      entity_category: ""
       filters:
         - offset: ${ens160_eco2_offset} # Based on comparison with Sensirion SCD40
         - sliding_window_moving_average: # Smooth out the values
@@ -49,7 +47,6 @@ sensor:
       name: "TVOC"
       id: ens160_tvoc
       icon: "mdi:chemical-weapon"
-      entity_category: ""
       filters:
         - lambda: |-
             // Sanity check for TVOC values

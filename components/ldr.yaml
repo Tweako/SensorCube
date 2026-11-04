@@ -4,7 +4,7 @@ substitutions:
   # LDR configuration settings
   ldr_pin: "GPIO0"
   ldr_update_interval: "30s"
-  ldr_attenuation: "0db"  # ADC attenuation (0db, 2.5db, 6db, 11db)
+  ldr_attenuation: "auto"  # ADC attenuation (auto, 0db, 2.5db, 6db, 12db); 0db only measures up to ~0.75V
   
   # Calibration settings for lux conversion
   ldr_dark_voltage: "0.001"    # Voltage in darkness (V)
@@ -82,8 +82,8 @@ binary_sensor:
       if (isnan(id(illuminance).state)) {
         return {};
       }
-      // Daylight detected above 50 lux
-      return id(illuminance).state > 50;
+      // Daylight detected above the configurable threshold
+      return id(illuminance).state > id(daylight_threshold).state;
 
 # Number for configurable lux thresholds
 number:

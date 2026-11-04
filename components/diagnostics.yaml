@@ -15,7 +15,7 @@ sensor:
   - platform: internal_temperature
     name: "ESP32 Temperature"
     id: esp32_temperature
-    disabled_by_default: True
+    disabled_by_default: true
     entity_category: diagnostic
     unit_of_measurement: "°C"
     device_class: temperature

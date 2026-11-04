@@ -1,3 +1,5 @@
+# LED ring (WS2812) with effects, and a boot animation
+
 esphome:
   on_boot:
     priority: 600
@@ -11,7 +13,7 @@ esphome:
 
 light:
   - platform: esp32_rmt_led_strip
-    rgb_order: GRB
+    channel_colors: GRB
     chipset: WS2812
     gamma_correct: 1.5
     pin: GPIO4
@@ -90,9 +92,9 @@ light:
           lambda: |-
             static int x = -400;
             float y = 0.35+0.65*exp(-pow(x, 2)/49000);
-            int8_t r = ceil(current_color.r * y);
-            int8_t g = ceil(current_color.g * y);
-            int8_t b = ceil(current_color.b * y);
+            uint8_t r = ceil(current_color.r * y);
+            uint8_t g = ceil(current_color.g * y);
+            uint8_t b = ceil(current_color.b * y);
             it.all() = Color(r,g,b);
             x += 1;
             if (x == 400)
@@ -119,9 +121,19 @@ light:
               x = it.size();
             }
             if (x > 0) {
-              x -= 1; 
+              x -= 1;
               it[x] = Color::BLACK;
             }
+      # Used by led-air-quality.yaml: air quality colour with the first and last LED blinking yellow
+      - addressable_lambda:
+          name: "No WiFi Indicator"
+          update_interval: 50ms
+          lambda: |-
+            it.all() = current_color;
+            bool blink_on = (millis() / 500) % 2 == 0;
+            Color indicator = blink_on ? Color(255, 200, 0) : Color::BLACK;
+            it[0] = indicator;
+            it[it.size() - 1] = indicator;
       - addressable_random_twinkle:
       - addressable_flicker:
       - addressable_fireworks:
@@ -130,5 +142,5 @@ light:
       - addressable_color_wipe:
       - flicker:
       - strobe:
-      - random: 
+      - random:
       - pulse:

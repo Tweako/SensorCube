@@ -1,3 +1,5 @@
+# HLK-LD2450 mmWave radar: presence, movement, target tracking and zones
+
 # UART configuration for sensor communication
 uart:
   id: uart_ld2450
@@ -55,6 +57,7 @@ binary_sensor:
       name: "Movement"
     has_still_target:
       name: "Stationary"
+
 switch:
   - platform: ld2450
     ld2450_id: ld2450_radar
@@ -76,10 +79,10 @@ text_sensor:
     ld2450_id: ld2450_radar
     version:
       name: "LD2450 Firmware"
-      disabled_by_default: True
+      disabled_by_default: true
     mac_address:
       name: "LD2450 BT MAC"
-      disabled_by_default: True
+      disabled_by_default: true
     target_1:
       direction:
         name: "Target Direction"

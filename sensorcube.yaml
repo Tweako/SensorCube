@@ -1,8 +1,9 @@
+# Default SensorCube configuration with all features
+
 substitutions:
   name: sensorcube
   friendly_name: SensorCube
   num_leds: "12" # Number of LEDs in the ring
-  hidden_ssid: "False"
   log_level: INFO
   logger_baud_rate: "0"
 
@@ -12,7 +13,7 @@ esphome:
   name_add_mac_suffix: true
   project:
     name: "tweako.sensorcube"
-    version: "1.1.1"
+    version: "1.2.0"
 
 packages:
   device_base: !include components/sensorcube-base.yaml
@@ -28,6 +29,5 @@ packages:
 update:
   - platform: http_request
     name: "Firmware Update"
-    source: https://github.com/Tweako/SensorCube/releases/latest/download/sensorcube.manifest.json
+    source: https://github.com/Tweako/SensorCube/releases/latest/download/SensorCube.manifest.json
 
-# Default SensorCube configuration with all features

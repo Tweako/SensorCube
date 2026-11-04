@@ -1,3 +1,5 @@
+# Core ESP32-C3 setup: board, logging, I2C bus, uptime and maintenance buttons
+
 substitutions:
   device_description: "${friendly_name} made by Tweako"
 
@@ -40,8 +42,8 @@ button:
   - platform: factory_reset
     name: "Factory reset"
     entity_category: diagnostic
-    disabled_by_default: True
+    disabled_by_default: true
   - platform: safe_mode
     name: "Safe Mode"
     entity_category: diagnostic
-    disabled_by_default: True
+    disabled_by_default: true

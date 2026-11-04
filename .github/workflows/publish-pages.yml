@@ -17,7 +17,6 @@ on:
       - 'static/**'
       - '.github/workflows/publish-pages.yml'
 
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -28,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v7.0.1
 
       - run: mkdir -p output/firmware
 
@@ -39,7 +38,7 @@ jobs:
           destination: ./output
 
       - name: Fetch firmware files
-        uses: robinraju/release-downloader@v1.12
+        uses: robinraju/release-downloader@v1.13
         with:
           latest: true
           fileName: '*'
@@ -69,4 +68,4 @@ jobs:
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5.0.0
+        uses: actions/deploy-pages@v5.0.1
