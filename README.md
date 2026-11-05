@@ -69,7 +69,7 @@ De LED ring toont automatisch de luchtkwaliteit:
 - 🟢 **Groen**: Goed (eCO2 < 800 ppm)
 - 🟡 **Geel**: Redelijk (eCO2 < 1000 ppm)
 - 🟠 **Oranje**: Slecht (eCO2 < 1500 ppm)
-- 🔴 **Rood (pulsend)**: Zeer slecht (eCO2 ≥ 1500 ppm)
+- 🔴 **Rood**: Zeer slecht (eCO2 ≥ 1500 ppm)
 - 🌈 **Regenboog**: Nog geen eCO2 meetwaarde beschikbaar (bijv. net opgestart)
 - 🟡 **Knipperende gele LEDs (eerste en laatste)**: Geen WiFi verbinding; de rest van de ring blijft de luchtkwaliteit tonen
 - 🟡 **Geel (pulsend, gedimd)**: Geen WiFi én nog geen meetwaarde
@@ -80,7 +80,7 @@ zodat je de LED ring zelf kunt bedienen. Alle kleurgrenzen en de helderheid zijn
 aan te passen. Met **LED Night Mode** gaat de ring uit als het donker is (standaard < 5 lx)
 of als er 15 minuten niemand aanwezig is; zodra er weer iemand binnenkomt gaat hij weer aan.
 Met **LED Presence Tracker** wijst een wit lichtje op de ring naar iedereen die de radar ziet (maximaal 3 personen)
-en beweegt mee. Bij slechte lucht (rood) en zonder WiFi gaat de waarschuwing voor.
+en beweegt mee. Zonder WiFi gaat de WiFi-waarschuwing voor.
 
 ### CO2-grafiek zonder Home Assistant
 Open het IP-adres van de SensorCube in je browser: onder de entiteiten staat een grafiek van de eCO2 van de

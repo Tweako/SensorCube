@@ -127,17 +127,17 @@ Check these before removing or renaming IDs or packages:
 
 `led-air-quality.yaml` runs the `led_aq_update` script every `led_aq_check_interval` (2 s). It works out a state and only calls `led_ring` when the state or brightness changes. That way a manual change from Home Assistant stays until the air quality changes.
 - eCO2 unavailable → "Rainbow Spinner" (online) or dim yellow "Pulse" (offline).
-- No WiFi but valid eCO2 → air quality colour with the first and last LED blinking yellow ("No WiFi Indicator" effect; red Pulse/Strobe are not shown while offline).
-- `< eco2_excellent` (600) blue, `< eco2_good` (800) green, `< eco2_fair` (1000) yellow, `< eco2_poor` (1500) orange, `< eco2_bad` (65000) red + "Pulse", otherwise red + "Strobe".
+- No WiFi but valid eCO2 → air quality colour with the first and last LED blinking yellow ("No WiFi Indicator" effect).
+- `< eco2_excellent` (600) blue, `< eco2_good` (800) green, `< eco2_fair` (1000) yellow, `< eco2_poor` (1500) orange, otherwise red. All colours are steady: no pulsing/blinking for bad air (user's choice).
 - Brightness = `illuminance / lux_scale_factor * brightness_max + brightness_min`, clamped to `[brightness_min, brightness_max]` (falls back to `brightness_min` if illuminance is unavailable).
 - The `led_aq_enabled` switch ("LED Air Quality Indicator", restored, default on) turns the automation off and switches the ring off. After that the ring is fully under manual control.
 - eCO2 thresholds and min/max brightness are template `number` entities ("LED Threshold …", "LED Brightness Min/Max", category config, restored); the substitutions are only their initial values. Changing one forces a refresh.
 - Night mode ("LED Night Mode" switch, default on): ring off when illuminance < "LED Night Light Level" (back on above it + `led_night_lux_hysteresis`), or when `ld2450_presence` has been off for "LED Off Without Presence" minutes (0 = disabled). The LED ring does not measurably affect the LDR reading (tested).
 - On boot `ledring.yaml` shows a blue "Scan" effect; the interval has a `startup_delay` (10 s), and its first run always applies the state. Don't call `led_aq_update` from the switch's `on_turn_on`: that also fires on restore during setup, before `on_boot`.
-- Presence tracker ("LED Presence Tracker" switch, default on): for levels excellent..poor while online, the "Presence Tracker" effect shows the air quality colour plus a white light pointing at each LD2450 target (LED = `ledring_front_led` + `ledring_direction` × angle × num_leds / 360, smoothed). The ring's start/end is at the back of the cube, so the front is LED 6. Pulse/Strobe (bad air) and the No WiFi indicator take priority. Verified live: the light follows the person.
+- Presence tracker ("LED Presence Tracker" switch, default on): for every air quality level while online, the "Presence Tracker" effect shows the air quality colour plus a white light pointing at each LD2450 target (LED = `ledring_front_led` + `ledring_direction` × angle × num_leds / 360, smoothed). The ring's start/end is at the back of the cube, so the front is LED 6. The No WiFi indicator takes priority. Verified live: the light follows the person.
 - Note: eCO2 (window 10, send every 5 × 60 s) and DHT22 temperature (send every 5 × 60 s) publish roughly every 5 minutes.
 
-Effect names used in logic (`"Rainbow Spinner"`, `"Pulse"`, `"Strobe"`, `"Scan"`, `"No WiFi Indicator"`, `"Presence Tracker"`, `"None"`) must exist in `ledring.yaml`; keep them in sync when renaming effects.
+Effect names used in logic (`"Rainbow Spinner"`, `"Pulse"`, `"Scan"`, `"No WiFi Indicator"`, `"Presence Tracker"`, `"None"`) must exist in `ledring.yaml`; keep them in sync when renaming effects.
 
 ## Logging & debugging
 

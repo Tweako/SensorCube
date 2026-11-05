@@ -4,12 +4,12 @@
 # (ld2450.yaml), led_ring + "No WiFi Indicator" / "Presence Tracker" effects (ledring.yaml)
 #
 # States:
-#   eCO2 thresholds    -> blue / green / yellow / orange / red "Pulse" / red "Strobe"
+#   eCO2 thresholds    -> blue / green / yellow / orange / red (steady, no blinking)
 #   no eCO2 value yet  -> "Rainbow Spinner"
 #   no WiFi            -> air quality colour with the first and last LED blinking yellow
 #                         ("No WiFi Indicator" effect); dim yellow "Pulse" if
 #                         there is no eCO2 value either
-#   presence tracker   -> white light pointing at each person (levels excellent..poor,
+#   presence tracker   -> white light pointing at each person (any air quality level,
 #                         when online and the "LED Presence Tracker" switch is on)
 #   night mode         -> ring off when it is dark, or when nobody has been
 #                         present for a while (LD2450); back on with presence/light
@@ -26,8 +26,7 @@ substitutions:
   eco2_excellent: "600"    # Below: excellent (blue)
   eco2_good: "800"         # Below: good (green)
   eco2_fair: "1000"        # Below: fair (yellow)
-  eco2_poor: "1500"        # Below: poor (orange); above: very poor (red, pulse)
-  eco2_bad: "65000"        # At or above: red strobe (sensor maximum)
+  eco2_poor: "1500"        # Below: poor (orange); above: very poor (red)
 
   # Initial LED brightness (%), adjustable via number entities
   brightness_min: "5"
@@ -259,7 +258,7 @@ script:
 
           bool online = wifi::global_wifi_component->is_connected();
 
-          // Air quality level: 0 = no eCO2 value (yet), 1..6 = excellent..extremely poor
+          // Air quality level: 0 = no eCO2 value (yet), 1..5 = excellent..very poor
           int level = 0;
           if (!isnan(id(ens160_eco2).state)) {
             float eco2 = id(ens160_eco2).state;
@@ -267,8 +266,7 @@ script:
             else if (eco2 < id(led_eco2_good).state) level = 2;
             else if (eco2 < id(led_eco2_fair).state) level = 3;
             else if (eco2 < id(led_eco2_poor).state) level = 4;
-            else if (eco2 < ${eco2_bad}) level = 5;
-            else level = 6;
+            else level = 5;
           }
           int state = level + (online ? 0 : 10);
 
@@ -306,16 +304,12 @@ script:
             case 2: call.set_rgb(0, 1, 0); break;    // Good: green
             case 3: call.set_rgb(1, 1, 0); break;    // Fair: yellow
             case 4: call.set_rgb(1, 0.5, 0); break;  // Poor: orange
-            default: call.set_rgb(1, 0, 0); break;   // Very / extremely poor: red
+            default: call.set_rgb(1, 0, 0); break;   // Very poor: red
           }
           if (level > 0) {
             if (!online) {
               // Show the air quality colour with the first and last LED blinking yellow
               call.set_effect("${led_no_wifi_effect}");
-            } else if (level == 5) {
-              call.set_effect("Pulse");
-            } else if (level == 6) {
-              call.set_effect("Strobe");
             } else if (id(led_presence_tracker).state) {
               call.set_effect("${led_presence_effect}");
             } else {
