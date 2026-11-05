@@ -10,11 +10,11 @@ permissions:
 jobs:
   build-firmware:
     name: Build Firmware
-    uses: esphome/workflows/.github/workflows/build.yml@2025.10.0
+    uses: esphome/workflows/.github/workflows/build.yml@2026.10.3
     with:
       files: |
         sensorcube.factory.yaml
-      esphome-version: 2025.12.4
+      esphome-version: 2026.10.2
       combined-name: SensorCube
 
       release-summary: ${{ github.event.release.body }}
@@ -23,7 +23,7 @@ jobs:
 
   upload-to-release:
     name: Upload to Release
-    uses: esphome/workflows/.github/workflows/upload-to-gh-release.yml@2025.10.0
+    uses: esphome/workflows/.github/workflows/upload-to-gh-release.yml@2026.10.3
     needs:
       - build-firmware
     with:

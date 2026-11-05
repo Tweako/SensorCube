@@ -1,24 +1,17 @@
+# Factory firmware: the main configuration plus WiFi provisioning over USB (Improv serial)
+# and ESPHome dashboard adoption. This is the file built and published for releases.
 packages:
   core: !include sensorcube.yaml
 
 substitutions:
-  logger_baud_rate: "115200"
+  logger_baud_rate: "115200"  # UART/USB logging is required for improv_serial
 
 esphome:
   project:
-    version: dev
+    version: dev  # Replaced by the release tag in the publish-firmware workflow
 
 # Sets up the improv via serial client for Wi-Fi provisioning.
 improv_serial:
 
-safe_mode:
-
-ota:
-  - platform: esphome
-    password: ""
-
-web_server:
-  port: 80
-
 dashboard_import:
-  package_import_url: github://Tweako/sensorcube/sensorcube.yaml@main
+  package_import_url: github://Tweako/SensorCube/sensorcube.yaml@main

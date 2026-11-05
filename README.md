@@ -17,6 +17,7 @@ Met SensorCube kun je:
 - **DHT22 (AM2302)**: Meet temperatuur en luchtvochtigheid met verbeterde kalibratie
 - **ENS160**: Meet luchtkwaliteit, eCO2 en TVOC met intelligente filters
   - Air Quality Index (AQI)
+  - Statussensor: opwarmen (3 min na inschakelen), eerste opstart (1 uur na de allereerste keer) of normaal
 - **AHT20**: Compensatie sensor voor ENS160 temperatuur en luchtvochtigheid
 - **TEMT6000 (LDR)**: Meet lichtintensiteit met gamma correctie
   - Automatische LED helderheid aanpassing
@@ -24,7 +25,7 @@ Met SensorCube kun je:
   - Configureerbare licht thresholds
 - **LD2450**: mmWave-sensor voor bewegingsdetectie en aanwezigheidssensing
   - Multi-target tracking
-  - Configureerbare detectie zones
+  - Configureerbare detectie zones, met presets (hele kamer, 2 of 3 zones naast elkaar, 3 zones op afstand)
   - Bluetooth configuratie support
 
 ### Componenten
@@ -32,21 +33,10 @@ Met SensorCube kun je:
   - Automatische luchtkwaliteit kleuren
   - Configureerbare helderheid op basis van omgevingslicht
   - Diverse effecten (Rainbow, Fire, Scan, etc.)
-- **Remote Control**: Ondersteuning voor IR afstandsbediening (RC variant)
+  - Presence Tracker: een wit lichtje wijst naar elke persoon die de radar ziet en loopt met je mee
 - **Diagnostiek**: Uitgebreide systeem monitoring
   - WiFi signaalsterkte
   - ESP32 temperatuur
-
-## 📱 Drie configuratie varianten
-
-### 1. **SensorCube Standard** (`sensorcube.yaml`)
-Volledige configuratie met alle sensoren en functies.
-
-### 2. **SensorCube Air Quality** (`sensorcube_aq.yaml`) 
-Gefocust op luchtkwaliteit monitoring zonder mmWave sensor.
-
-### 3. **SensorCube RC** (`sensorcube_rc.yaml`)
-Standaard configuratie plus IR remote control ondersteuning.
 
 ## 🚀 Installatie
 
@@ -59,27 +49,43 @@ Bezoek de [officiële installatiepagina](https://tweako.github.io/SensorCube/) v
 git clone https://github.com/Tweako/SensorCube.git
 cd SensorCube
 
-# Compileer en upload (kies je variant)
-esphome run sensorcube.yaml          # Standaard versie
-esphome run sensorcube_aq.yaml       # Luchtkwaliteit focus
-esphome run sensorcube_rc.yaml       # Met remote control
+# Compileer en upload
+esphome run sensorcube.yaml
 ```
 
 ### 3. **Factory firmware**
-Voor eerste installatie gebruik je de factory versies die WiFi provisioning bevatten:
+Voor eerste installatie gebruik je de factory versie die WiFi provisioning (Improv via USB) bevat:
 ```bash
 esphome run sensorcube.factory.yaml
 ```
+
+> **Windows:** start ESPHome vanuit PowerShell of cmd, niet vanuit Git Bash (ESP-IDF ondersteunt MSYS niet).
 
 ## ⚙️ Configuratie
 
 ### LED Luchtkwaliteit Indicaties
 De LED ring toont automatisch de luchtkwaliteit:
 - 🔵 **Blauw**: Uitstekend (eCO2 < 600 ppm)
-- 🟢 **Groen**: Goed (eCO2 < 800 ppm)  
+- 🟢 **Groen**: Goed (eCO2 < 800 ppm)
 - 🟡 **Geel**: Redelijk (eCO2 < 1000 ppm)
 - 🟠 **Oranje**: Slecht (eCO2 < 1500 ppm)
-- 🔴 **Rood (pulsend)**: Zeer slecht (eCO2 ≥ 1500 ppm)
+- 🔴 **Rood**: Zeer slecht (eCO2 ≥ 1500 ppm)
+- 🌈 **Regenboog**: Nog geen eCO2 meetwaarde beschikbaar (bijv. net opgestart)
+- 🟡 **Knipperende gele LEDs (eerste en laatste)**: Geen WiFi verbinding; de rest van de ring blijft de luchtkwaliteit tonen
+- 🟡 **Geel (pulsend, gedimd)**: Geen WiFi én nog geen meetwaarde
+
+De helderheid past zich aan het omgevingslicht aan (5–50%). Met de schakelaar
+**LED Air Quality Indicator** in Home Assistant zet je de automatische kleuren uit,
+zodat je de LED ring zelf kunt bedienen. Alle kleurgrenzen en de helderheid zijn in Home Assistant
+aan te passen. Met **LED Night Mode** gaat de ring uit als het donker is (standaard < 5 lx)
+of als er 15 minuten niemand aanwezig is; zodra er weer iemand binnenkomt gaat hij weer aan.
+Met **LED Presence Tracker** wijst een wit lichtje op de ring naar iedereen die de radar ziet (maximaal 3 personen)
+en beweegt mee. Zonder WiFi gaat de WiFi-waarschuwing voor.
+
+### CO2-grafiek zonder Home Assistant
+Open het IP-adres van de SensorCube in je browser: onder de entiteiten staat een grafiek van de eCO2 van de
+laatste 24 uur (één waarde per 15 minuten). De gegevens staan in het geheugen van het apparaat en beginnen na
+een herstart opnieuw.
 
 ### GPIO Pin Assignment
 ```
@@ -87,10 +93,9 @@ GPIO0  - LDR (lichtintensiteit)
 GPIO4  - Neopixel LED ring
 GPIO5  - DHT22 data pin
 GPIO6  - I2C SDA (ENS160, AHT20)
-GPIO7  - I2C SCL (ENS160, AHT20)  
+GPIO7  - I2C SCL (ENS160, AHT20)
 GPIO20 - LD2450 UART TX
 GPIO21 - LD2450 UART RX
-GPIO1  - IR Receiver (alleen RC variant)
 ```
 
 ## 🏗️ Project Structuur
@@ -98,22 +103,22 @@ GPIO1  - IR Receiver (alleen RC variant)
 ```
 SensorCube/
 ├── sensorcube.yaml              # Hoofd configuratie
-├── sensorcube_aq.yaml           # Luchtkwaliteit variant
-├── sensorcube_rc.yaml           # Remote control variant
-├── sensorcube*.factory.yaml     # Factory firmware versies
+├── sensorcube.factory.yaml      # Factory firmware (met WiFi provisioning)
 ├── components/                  # Modulaire componenten
-│   ├── sensorcube_base.yaml     # Basis ESP32 configuratie
+│   ├── sensorcube-base.yaml     # Basis ESP32 configuratie
 │   ├── network.yaml             # WiFi, API, OTA configuratie
-│   ├── dht22.yaml              # Temperatuur/luchtvochtigheid
-│   ├── ens160.yaml             # Luchtkwaliteit sensor
-│   ├── ld2450.yaml             # mmWave bewegingssensor
-│   ├── ledring.yaml            # LED ring effecten
-│   ├── ldr.yaml                # Lichtintensiteit sensor
-│   ├── led_air_quality.yaml    # Automatische LED kleuren
-│   ├── diagnostics.yaml        # Systeem monitoring
-│   └── remote_receiver.yaml    # IR afstandsbediening
-├── static/                     # GitHub Pages website
-└── .github/workflows/          # Automatische CI/CD
+│   ├── dht22.yaml               # Temperatuur/luchtvochtigheid
+│   ├── ens160.yaml              # Luchtkwaliteit sensor
+│   ├── ld2450.yaml              # mmWave bewegingssensor
+│   ├── ledring.yaml             # LED ring effecten
+│   ├── ldr.yaml                 # Lichtintensiteit sensor
+│   ├── led-air-quality.yaml     # Automatische LED kleuren
+│   ├── comfort.yaml             # Comfortindex (binnenklimaat)
+│   ├── eco2-history.yaml        # eCO2 geschiedenis (24 uur) voor de grafiek
+│   ├── web/eco2-history.js      # Grafiek op de webpagina van het apparaat
+│   └── diagnostics.yaml         # Systeem monitoring
+├── static/                      # GitHub Pages website
+└── .github/workflows/           # Automatische CI/CD
 ```
 
 ## 📊 Beschikbare Entiteiten
@@ -123,12 +128,24 @@ SensorCube/
 - eCO2, TVOC, Air Quality Index met beschrijvingen
 - Lichtintensiteit met percentage en niveau beschrijvingen
 - Beweging, Aanwezigheid, Aantal personen (LD2450)
-- WiFi signaal, ESP32 temperatuur
+- Ventilation Needed: aan boven de ingestelde eCO2 grens (handig voor meldingen of een ventilator)
+- Comfort: Comfortable, Stuffy (benauwd), Too Cold, Too Warm, Too Dry of Too Humid
+- Air Quality Sensor Status: Warming Up, Initial Start-up, Normal
+- eCO2 History: gegevens voor de grafiek (standaard verborgen in Home Assistant)
+- WiFi signaal, ESP32 temperatuur, Online sinds (via Home Assistant of NTP tijd)
 
 
-### Knoppen & Controles  
+### Knoppen & Controles
 - Restart, Factory reset, Safe mode
 - LD2450 Bluetooth toggle
+- LED Air Quality Indicator (automatische LED kleuren aan/uit)
+- LED Night Mode: ring uit als het donker is of als er een tijd niemand aanwezig is
+- LED Night Light Level / LED Off Without Presence (instellingen nachtmodus)
+- LED Threshold Excellent/Good/Fair/Poor en LED Brightness Min/Max (kleurgrenzen en helderheid)
+- Ventilation Threshold (grens voor ventilatie-advies)
+- LED Presence Tracker: wit lichtje dat aanwezige personen volgt
+- Zone Preset: vult alle LD2450 zones in één keer in
+- Daylight Threshold (lux grens voor dag/nacht detectie)
 
 ## 🔄 Updates & Onderhoud
 

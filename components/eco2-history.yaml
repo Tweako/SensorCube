@@ -1,0 +1,47 @@
+# eCO2 history of the last 24 hours, shown as a chart on the device's own web page
+# (works without Home Assistant). The history lives in RAM and starts empty after a reboot.
+# Requires: ens160_eco2 (ens160.yaml), web_server (network.yaml)
+#
+# The "eCO2 History" text sensor holds one value per slot, oldest first, 2 characters each:
+# round(ppm / 10) in base 36 ("--" = no value). 96 slots x 2 = 192 characters, which stays
+# below Home Assistant's 255 character state limit. It is disabled by default in Home Assistant.
+
+substitutions:
+  eco2_history_slot: "15min"   # Time per slot; 96 slots = 24 hours
+  eco2_history_slots: "96"
+
+text_sensor:
+  - platform: template
+    name: "eCO2 History"
+    id: eco2_history
+    icon: "mdi:chart-line"
+    entity_category: diagnostic
+    disabled_by_default: true
+    update_interval: ${eco2_history_slot}
+    lambda: |-
+      static const char *DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz";
+      static int16_t values[${eco2_history_slots}];
+      static bool initialized = false;
+      if (!initialized) {
+        for (auto &v : values) v = -1;
+        initialized = true;
+      }
+      // Shift left and append the current value
+      for (int i = 0; i < ${eco2_history_slots} - 1; i++) values[i] = values[i + 1];
+      float eco2 = id(ens160_eco2).state;
+      values[${eco2_history_slots} - 1] = isnan(eco2) ? -1 : (int16_t) fminf(1295.0f, roundf(eco2 / 10.0f));
+
+      std::string out;
+      out.reserve(${eco2_history_slots} * 2);
+      for (int16_t v : values) {
+        if (v < 0) {
+          out += "--";
+        } else {
+          out += DIGITS[v / 36];
+          out += DIGITS[v % 36];
+        }
+      }
+      return out;
+
+web_server:
+  js_include: "components/web/eco2-history.js"
