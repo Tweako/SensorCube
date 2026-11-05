@@ -1,5 +1,10 @@
 # HLK-LD2450 mmWave radar: presence, movement, target tracking and zones
 
+substitutions:
+  # Zone presets (mm). X is sideways (radar coordinates), Y is the distance from the radar.
+  ld2450_preset_width: "4000"   # Half width of the covered area
+  ld2450_preset_depth: "6000"   # Maximum distance
+
 # UART configuration for sensor communication
 uart:
   id: uart_ld2450
@@ -75,6 +80,41 @@ select:
     zone_type:
       name: "Zone Type"
 
+  # Fills in all zone coordinates at once (the zone numbers are updated by the radar)
+  - platform: template
+    name: "Zone Preset"
+    id: ld2450_zone_preset
+    icon: "mdi:floor-plan"
+    entity_category: config
+    optimistic: true
+    options:
+      - "Custom"
+      - "Whole Room"
+      - "2 Zones Side by Side"
+      - "3 Zones Side by Side"
+      - "3 Zones by Distance"
+    initial_option: "Custom"
+    set_action:
+      - lambda: |-
+          const int w = ${ld2450_preset_width};
+          const int d = ${ld2450_preset_depth};
+          const int ZONE_DETECTION = 1;
+          // Zones: x1, y1, x2, y2; all zeros = unused. Side by side: zone 1 = negative X.
+          // Generic presets for any room; fine-tune the zone numbers afterwards if needed.
+          if (x == "Whole Room") {
+            id(ld2450_radar)->set_radar_zone(ZONE_DETECTION, -w, 0, w, d, 0, 0, 0, 0, 0, 0, 0, 0);
+          } else if (x == "2 Zones Side by Side") {
+            id(ld2450_radar)->set_radar_zone(ZONE_DETECTION, -w, 0, 0, d, 0, 0, w, d, 0, 0, 0, 0);
+          } else if (x == "3 Zones Side by Side") {
+            const int c = w / 4;  // Middle zone: 1 m on each side of the centre line by default
+            id(ld2450_radar)->set_radar_zone(ZONE_DETECTION, -w, 0, -c, d, -c, 0, c, d, c, 0, w, d);
+          } else if (x == "3 Zones by Distance") {
+            id(ld2450_radar)->set_radar_zone(ZONE_DETECTION, -w, 0, w, d / 4, -w, d / 4, w, d / 2, -w, d / 2, w, d);
+          } else {
+            return;  // Custom: keep the current zone numbers
+          }
+          ESP_LOGI("ld2450", "Zone preset applied: %s", x.c_str());
+
 text_sensor:
   - platform: ld2450
     ld2450_id: ld2450_radar
@@ -106,10 +146,22 @@ sensor:
         name: "Target Speed"
       angle:
         name: "Target Angle"
+        id: ld2450_target1_angle  # Used by the "Presence Tracker" LED effect
       distance:
         name: "Target Distance"
       resolution:
         name: "Target Resolution"
+    # Angles of the 2nd/3rd person, only for the "Presence Tracker" LED effect
+    target_2:
+      angle:
+        name: "Target 2 Angle"
+        id: ld2450_target2_angle
+        internal: true
+    target_3:
+      angle:
+        name: "Target 3 Angle"
+        id: ld2450_target3_angle
+        internal: true
     zone_1:
       target_count:
         name: "Zone 1 Count"

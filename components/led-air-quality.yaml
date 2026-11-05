@@ -1,7 +1,7 @@
 # LED Air Quality component
 # Drives the LED ring from the eCO2 level (colour) and ambient light (brightness).
 # Requires: ens160_eco2 (ens160.yaml), illuminance (ldr.yaml), ld2450_presence
-# (ld2450.yaml), led_ring + "No WiFi Indicator" effect (ledring.yaml)
+# (ld2450.yaml), led_ring + "No WiFi Indicator" / "Presence Tracker" effects (ledring.yaml)
 #
 # States:
 #   eCO2 thresholds    -> blue / green / yellow / orange / red "Pulse" / red "Strobe"
@@ -9,6 +9,8 @@
 #   no WiFi            -> air quality colour with the first and last LED blinking yellow
 #                         ("No WiFi Indicator" effect); dim yellow "Pulse" if
 #                         there is no eCO2 value either
+#   presence tracker   -> white light pointing at each person (levels excellent..poor,
+#                         when online and the "LED Presence Tracker" switch is on)
 #   night mode         -> ring off when it is dark, or when nobody has been
 #                         present for a while (LD2450); back on with presence/light
 #
@@ -40,6 +42,7 @@ substitutions:
   led_aq_check_interval: "2s"
   led_aq_startup_delay: "10s" # Let the boot animation play first
   led_no_wifi_effect: "No WiFi Indicator" # Effect from ledring.yaml
+  led_presence_effect: "Presence Tracker" # Effect from ledring.yaml
 
 globals:
   - id: led_aq_last_state
@@ -72,6 +75,18 @@ switch:
     name: "LED Night Mode"
     id: led_night_mode
     icon: "mdi:weather-night"
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    on_turn_on:
+      - lambda: "id(led_aq_last_state) = -1;"
+    on_turn_off:
+      - lambda: "id(led_aq_last_state) = -1;"
+
+  - platform: template
+    name: "LED Presence Tracker"
+    id: led_presence_tracker
+    icon: "mdi:account-eye"
     entity_category: config
     optimistic: true
     restore_mode: RESTORE_DEFAULT_ON
@@ -301,6 +316,8 @@ script:
               call.set_effect("Pulse");
             } else if (level == 6) {
               call.set_effect("Strobe");
+            } else if (id(led_presence_tracker).state) {
+              call.set_effect("${led_presence_effect}");
             } else {
               call.set_effect("None");
             }

@@ -5,7 +5,7 @@ substitutions:
   dht22_update_interval: "60s"
   dht22_temp_offset: "-1"        # Temperature offset
   dht22_temp_window_size: "5"    # Moving average window size
-  dht22_temp_send_every: "15"    # Send every X samples
+  dht22_temp_send_every: "5"     # Send every X samples (5 min)
   dht22_pin: "GPIO5"             # GPIO pin for DHT22
 
 sensor:

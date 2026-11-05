@@ -8,12 +8,13 @@ substitutions:
   # AHT20 compensation sensor configuration
   aht20_address: "0x38"
   aht20_temp_offset: "-7"  # Offset due to ENS160 heat dissipation
-  aht20_hum_offset: "5"    # Offset due to ENS160 heat dissipation
+  aht20_hum_offset: "12"   # Offset due to ENS160 heat dissipation (matched to the DHT22, which agrees with a reference sensor)
   
   # ENS160 calibration
   ens160_eco2_offset: "-100"  # Based on comparison with Sensirion SCD40
-  ens160_eco2_window_size: "15"
-  ens160_eco2_send_every: "15"
+  ens160_eco2_window_size: "10"  # Average over the last 10 readings (10 min)
+  ens160_eco2_send_every: "5"    # Publish every 5 readings (5 min)
+  ens160_eco2_min: "400"         # The ENS160 never reports below 400 ppm; don't go lower after the offset
 
   # Ventilation advice (initial threshold, adjustable via number entity)
   ventilation_threshold: "1000"  # ppm eCO2
@@ -21,6 +22,7 @@ substitutions:
 
 sensor:
   - platform: ens160_i2c
+    id: ens160_sensor
     address: ${ens160_address}
     update_interval: ${ens160_update_interval}
     aqi:
@@ -37,9 +39,9 @@ sensor:
             window_size: ${ens160_eco2_window_size}
             send_every: ${ens160_eco2_send_every}
         - lambda: |-
-            // Ensure eCO2 does not become negative
-            if (x < 0) {
-              return 0;
+            // Keep eCO2 at the sensor minimum (400 ppm) after the offset
+            if (x < ${ens160_eco2_min}) {
+              return ${ens160_eco2_min};
             } else if (x > 65000) {
               // Cap extreme values
               ESP_LOGW("ens160", "eCO2 value very high: %.0f ppm", x);
@@ -93,7 +95,7 @@ sensor:
             }
             return x;
 
-# Text sensor for readable air quality status
+# Text sensors for readable air quality status and sensor state
 text_sensor:
   - platform: template
     name: "Air Quality"
@@ -119,6 +121,28 @@ text_sensor:
         return {"Unknown"};
       }
     update_interval: 60s
+
+  - platform: template
+    name: "Air Quality Sensor Status"
+    id: ens160_status
+    icon: "mdi:air-filter"
+    entity_category: diagnostic
+    update_interval: 30s
+    lambda: |-
+      // validity_flag_ is protected; read it through a member pointer of a derived type
+      struct Access : ens160_base::ENS160Component {
+        static auto flag() { return &Access::validity_flag_; }
+      };
+      if (id(ens160_sensor)->is_failed()) {
+        return {"Error"};
+      }
+      switch ((int) (id(ens160_sensor)->*Access::flag())) {
+        case 0: return {isnan(id(ens160_eco2).state) ? "Starting" : "Normal"};
+        case 1: return {"Warming Up"};         // ~3 minutes after every power-on
+        case 2: return {"Initial Start-up"};   // ~1 hour after the very first power-on
+        case 3: return {"Invalid Output"};
+        default: return {"Unknown"};
+      }
 
 # Ventilation advice for automations (e.g. notification or ventilation fan)
 number:

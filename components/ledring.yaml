@@ -1,4 +1,11 @@
 # LED ring (WS2812) with effects, and a boot animation
+# The "Presence Tracker" effect needs the LD2450 target angles (ld2450.yaml).
+
+substitutions:
+  # LED that points straight ahead (the radar's direction). The ring starts and ends
+  # at the back of the cube, so the front is in the middle of the strip.
+  ledring_front_led: "6"
+  ledring_direction: "1"      # 1 or -1: which way the LED index runs around the cube
 
 esphome:
   on_boot:
@@ -134,6 +141,41 @@ light:
             Color indicator = blink_on ? Color(255, 200, 0) : Color::BLACK;
             it[0] = indicator;
             it[it.size() - 1] = indicator;
+      # Used by led-air-quality.yaml: air quality colour plus a white light that
+      # points towards every person the LD2450 sees (up to 3) and follows them
+      - addressable_lambda:
+          name: "Presence Tracker"
+          update_interval: 40ms
+          lambda: |-
+            static float pos[3] = {0, 0, 0};
+            static bool active[3] = {false, false, false};
+            const float n = it.size();
+            sensor::Sensor *angles[3] = {id(ld2450_target1_angle), id(ld2450_target2_angle),
+                                         id(ld2450_target3_angle)};
+            it.all() = current_color;
+            for (int t = 0; t < 3; t++) {
+              float angle = angles[t]->state;
+              if (!angles[t]->has_state() || isnan(angle)) {
+                active[t] = false;
+                continue;
+              }
+              // Angle (degrees, 0 = straight ahead) -> position on the ring (in LEDs)
+              float target = ${ledring_front_led} + ${ledring_direction} * angle * n / 360.0f;
+              if (!active[t] || initial_run) {
+                pos[t] = target;  // New person: jump straight to the position
+                active[t] = true;
+              } else {
+                pos[t] += (target - pos[t]) * 0.15f;  // Glide smoothly
+              }
+              // Light the two nearest LEDs proportionally, so the light moves fluently
+              for (int i = 0; i < it.size(); i++) {
+                float dist = fabsf(fmodf(i - pos[t] + 1.5f * n, n) - 0.5f * n);
+                if (dist < 1.0f) {
+                  Color c = it[i].get();
+                  it[i] = c.gradient(Color::WHITE, (uint8_t) ((1.0f - dist) * 255.0f));
+                }
+              }
+            }
       - addressable_random_twinkle:
       - addressable_flicker:
       - addressable_fireworks:

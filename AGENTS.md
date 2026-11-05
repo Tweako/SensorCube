@@ -17,11 +17,13 @@ There is no application code in the traditional sense: the project is **modular 
 | `components/sensorcube-base.yaml` | ESP32 board, logger, I2C bus (GPIO6 SDA / GPIO7 SCL), `esp_uptime`, ESPHome version, restart/factory reset/safe mode buttons. |
 | `components/network.yaml` | WiFi + AP + captive portal, API, `http_request`, OTA (esphome + http_request), web server v3, time (Home Assistant + SNTP fallback), "Online since" sensor. |
 | `components/dht22.yaml` | DHT22/AM2302 temperature & humidity (GPIO5). |
-| `components/ens160.yaml` | ENS160 air quality (I2C `0x53`) + AHT20 (I2C `0x38`) used as compensation sensor, plus an "Air Quality" text sensor. |
-| `components/ld2450.yaml` | LD2450 mmWave radar on UART (TX GPIO20 / RX GPIO21, 256000 baud), zones, counts, targets. |
+| `components/ens160.yaml` | ENS160 air quality (I2C `0x53`) + AHT20 (I2C `0x38`) used as compensation sensor, plus "Air Quality" and "Air Quality Sensor Status" (warm-up / initial start-up) text sensors. |
+| `components/ld2450.yaml` | LD2450 mmWave radar on UART (TX GPIO20 / RX GPIO21, 256000 baud), zones, counts, targets (angles of all 3 targets for the LED tracker), "Zone Preset" select. |
 | `components/ldr.yaml` | TEMT6000/LDR on ADC GPIO0 (`attenuation: auto`) → lux (gamma corrected), light percentage, daylight binary sensor with configurable threshold. |
-| `components/ledring.yaml` | `led_ring` light (WS2812, GPIO4, `${num_leds}` LEDs) and all effects; boot animation. |
+| `components/ledring.yaml` | `led_ring` light (WS2812, GPIO4, `${num_leds}` LEDs) and all effects (incl. "Presence Tracker"); boot animation. |
 | `components/led-air-quality.yaml` | Script + interval that drive `led_ring` from eCO2, ambient light and WiFi state; "LED Air Quality Indicator" switch. |
+| `components/comfort.yaml` | "Comfort" text sensor (Stuffy / Too Cold / Too Warm / Too Dry / Too Humid / Comfortable) from DHT22 + eCO2. |
+| `components/eco2-history.yaml` | 24 h eCO2 history in RAM as the "eCO2 History" text sensor (96 × 15 min, 2 base-36 chars each), drawn as a chart on the web server page by `components/web/eco2-history.js` (`js_include`). |
 | `components/diagnostics.yaml` | WiFi signal, ESP32 internal temperature, status binary sensor. |
 | `static/` | Jekyll site for GitHub Pages (ESP Web Tools installer). |
 | `.github/workflows/` | CI, firmware release, Pages publishing. |
@@ -77,9 +79,9 @@ Sensors follow this filter chain:
 3. `lambda:` sanity check that logs with `ESP_LOGW("<component>", ...)` and returns `{}` (drop) or a clamped value.
 
 Current calibration values (keep the explaining comments when changing them):
-- DHT22 temperature: offset `-1`, window 5 / send every 15; valid range -40..80 °C; humidity 0..100 %.
-- ENS160 eCO2: offset `-100` ppm (calibrated against a Sensirion SCD40), window 15; clamped to 0..65000. The ENS160 never reports below 400 ppm, so clean air shows as 300 ppm.
-- AHT20: temperature offset `-7`, humidity offset `+5` to compensate for ENS160 self-heating.
+- DHT22 temperature: offset `-1`, window 5 / send every 5; valid range -40..80 °C; humidity 0..100 % (no offset: matches a reference humidity sensor).
+- ENS160 eCO2: offset `-100` ppm (calibrated against a Sensirion SCD40), window 10 / send every 5; clamped to 400..65000 (the ENS160 never reports below 400 ppm, so the minimum stays 400 after the offset).
+- AHT20: temperature offset `-7`, humidity offset `+12` (matched to the DHT22) to compensate for ENS160 self-heating.
 
 ### Entity categorisation
 - `entity_category: diagnostic` for WiFi signal, status, uptime/"Online since", restart/factory reset/safe mode buttons.
@@ -115,6 +117,10 @@ Check these before removing or renaming IDs or packages:
 - `sensorcube-base.yaml` needs root substitutions `friendly_name`, `log_level`, `logger_baud_rate`.
 - `led-air-quality.yaml` also needs `ld2450_presence` (ld2450) for night mode.
 - `ens160.yaml`'s "Ventilation Needed" uses `ens160_eco2` and the `ventilation_threshold` number from the same file.
+- `led-air-quality.yaml` needs the `led_presence_tracker` switch (same file) and the "Presence Tracker" effect; that effect in `ledring.yaml` needs `ld2450_target1_angle`/`ld2450_target2_angle`/`ld2450_target3_angle` (ld2450).
+- `comfort.yaml` needs `dht22_temperature`, `dht22_humidity` (dht22) and `ens160_eco2` (ens160).
+- `eco2-history.yaml` needs `ens160_eco2` (ens160) and the `web_server` (network); its JS reads `/text_sensor/eCO2 History`, so keep that entity name.
+- The "Zone Preset" select in `ld2450.yaml` calls `ld2450_radar->set_radar_zone()`; the radar answers with the new zones and updates the zone numbers itself.
 - `ld2450.yaml` and `diagnostics.yaml` don't depend on other components.
 
 ## LED air quality behaviour
@@ -128,9 +134,10 @@ Check these before removing or renaming IDs or packages:
 - eCO2 thresholds and min/max brightness are template `number` entities ("LED Threshold …", "LED Brightness Min/Max", category config, restored); the substitutions are only their initial values. Changing one forces a refresh.
 - Night mode ("LED Night Mode" switch, default on): ring off when illuminance < "LED Night Light Level" (back on above it + `led_night_lux_hysteresis`), or when `ld2450_presence` has been off for "LED Off Without Presence" minutes (0 = disabled). The LED ring does not measurably affect the LDR reading (tested).
 - On boot `ledring.yaml` shows a blue "Scan" effect; the interval has a `startup_delay` (10 s), and its first run always applies the state. Don't call `led_aq_update` from the switch's `on_turn_on`: that also fires on restore during setup, before `on_boot`.
-- Note: eCO2 (window 15 × 60 s) and DHT22 temperature (send every 15 × 60 s) are block-averaged, so they publish roughly every 15 minutes.
+- Presence tracker ("LED Presence Tracker" switch, default on): for levels excellent..poor while online, the "Presence Tracker" effect shows the air quality colour plus a white light pointing at each LD2450 target (LED = `ledring_front_led` + `ledring_direction` × angle × num_leds / 360, smoothed). The ring's start/end is at the back of the cube, so the front is LED 6. Pulse/Strobe (bad air) and the No WiFi indicator take priority. Verified live: the light follows the person.
+- Note: eCO2 (window 10, send every 5 × 60 s) and DHT22 temperature (send every 5 × 60 s) publish roughly every 5 minutes.
 
-Effect names used in logic (`"Rainbow Spinner"`, `"Pulse"`, `"Strobe"`, `"Scan"`, `"No WiFi Indicator"`, `"None"`) must exist in `ledring.yaml`; keep them in sync when renaming effects.
+Effect names used in logic (`"Rainbow Spinner"`, `"Pulse"`, `"Strobe"`, `"Scan"`, `"No WiFi Indicator"`, `"Presence Tracker"`, `"None"`) must exist in `ledring.yaml`; keep them in sync when renaming effects.
 
 ## Logging & debugging
 

@@ -17,6 +17,7 @@ Met SensorCube kun je:
 - **DHT22 (AM2302)**: Meet temperatuur en luchtvochtigheid met verbeterde kalibratie
 - **ENS160**: Meet luchtkwaliteit, eCO2 en TVOC met intelligente filters
   - Air Quality Index (AQI)
+  - Statussensor: opwarmen (3 min na inschakelen), eerste opstart (1 uur na de allereerste keer) of normaal
 - **AHT20**: Compensatie sensor voor ENS160 temperatuur en luchtvochtigheid
 - **TEMT6000 (LDR)**: Meet lichtintensiteit met gamma correctie
   - Automatische LED helderheid aanpassing
@@ -24,7 +25,7 @@ Met SensorCube kun je:
   - Configureerbare licht thresholds
 - **LD2450**: mmWave-sensor voor bewegingsdetectie en aanwezigheidssensing
   - Multi-target tracking
-  - Configureerbare detectie zones
+  - Configureerbare detectie zones, met presets (hele kamer, 2 of 3 zones naast elkaar, 3 zones op afstand)
   - Bluetooth configuratie support
 
 ### Componenten
@@ -32,6 +33,7 @@ Met SensorCube kun je:
   - Automatische luchtkwaliteit kleuren
   - Configureerbare helderheid op basis van omgevingslicht
   - Diverse effecten (Rainbow, Fire, Scan, etc.)
+  - Presence Tracker: een wit lichtje wijst naar elke persoon die de radar ziet en loopt met je mee
 - **Diagnostiek**: Uitgebreide systeem monitoring
   - WiFi signaalsterkte
   - ESP32 temperatuur
@@ -77,6 +79,13 @@ De helderheid past zich aan het omgevingslicht aan (5–50%). Met de schakelaar
 zodat je de LED ring zelf kunt bedienen. Alle kleurgrenzen en de helderheid zijn in Home Assistant
 aan te passen. Met **LED Night Mode** gaat de ring uit als het donker is (standaard < 5 lx)
 of als er 15 minuten niemand aanwezig is; zodra er weer iemand binnenkomt gaat hij weer aan.
+Met **LED Presence Tracker** wijst een wit lichtje op de ring naar iedereen die de radar ziet (maximaal 3 personen)
+en beweegt mee. Bij slechte lucht (rood) en zonder WiFi gaat de waarschuwing voor.
+
+### CO2-grafiek zonder Home Assistant
+Open het IP-adres van de SensorCube in je browser: onder de entiteiten staat een grafiek van de eCO2 van de
+laatste 24 uur (één waarde per 15 minuten). De gegevens staan in het geheugen van het apparaat en beginnen na
+een herstart opnieuw.
 
 ### GPIO Pin Assignment
 ```
@@ -104,6 +113,9 @@ SensorCube/
 │   ├── ledring.yaml             # LED ring effecten
 │   ├── ldr.yaml                 # Lichtintensiteit sensor
 │   ├── led-air-quality.yaml     # Automatische LED kleuren
+│   ├── comfort.yaml             # Comfortindex (binnenklimaat)
+│   ├── eco2-history.yaml        # eCO2 geschiedenis (24 uur) voor de grafiek
+│   ├── web/eco2-history.js      # Grafiek op de webpagina van het apparaat
 │   └── diagnostics.yaml         # Systeem monitoring
 ├── static/                      # GitHub Pages website
 └── .github/workflows/           # Automatische CI/CD
@@ -117,6 +129,9 @@ SensorCube/
 - Lichtintensiteit met percentage en niveau beschrijvingen
 - Beweging, Aanwezigheid, Aantal personen (LD2450)
 - Ventilation Needed: aan boven de ingestelde eCO2 grens (handig voor meldingen of een ventilator)
+- Comfort: Comfortable, Stuffy (benauwd), Too Cold, Too Warm, Too Dry of Too Humid
+- Air Quality Sensor Status: Warming Up, Initial Start-up, Normal
+- eCO2 History: gegevens voor de grafiek (standaard verborgen in Home Assistant)
 - WiFi signaal, ESP32 temperatuur, Online sinds (via Home Assistant of NTP tijd)
 
 
@@ -128,6 +143,8 @@ SensorCube/
 - LED Night Light Level / LED Off Without Presence (instellingen nachtmodus)
 - LED Threshold Excellent/Good/Fair/Poor en LED Brightness Min/Max (kleurgrenzen en helderheid)
 - Ventilation Threshold (grens voor ventilatie-advies)
+- LED Presence Tracker: wit lichtje dat aanwezige personen volgt
+- Zone Preset: vult alle LD2450 zones in één keer in
 - Daylight Threshold (lux grens voor dag/nacht detectie)
 
 ## 🔄 Updates & Onderhoud

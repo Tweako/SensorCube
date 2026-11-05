@@ -1,0 +1,31 @@
+# Comfort index: one readable indoor climate status from temperature, humidity and eCO2
+# Requires: dht22_temperature, dht22_humidity (dht22.yaml), ens160_eco2 (ens160.yaml)
+
+substitutions:
+  comfort_temp_min: "19"     # °C; below: "Too Cold"
+  comfort_temp_max: "24"     # °C; above: "Too Warm"
+  comfort_hum_min: "30"      # %; below: "Too Dry"
+  comfort_hum_max: "60"      # %; above: "Too Humid"
+  comfort_eco2_max: "1000"   # ppm; at or above: "Stuffy"
+  comfort_update_interval: "60s"
+
+text_sensor:
+  - platform: template
+    name: "Comfort"
+    id: comfort_status
+    icon: "mdi:home-thermometer"
+    update_interval: ${comfort_update_interval}
+    lambda: |-
+      // The most important problem wins: stale air, then temperature, then humidity
+      float t = id(dht22_temperature).state;
+      float h = id(dht22_humidity).state;
+      float co2 = id(ens160_eco2).state;
+      if (isnan(t) && isnan(h) && isnan(co2)) {
+        return {"Unknown"};
+      }
+      if (!isnan(co2) && co2 >= ${comfort_eco2_max}) return {"Stuffy"};
+      if (!isnan(t) && t < ${comfort_temp_min}) return {"Too Cold"};
+      if (!isnan(t) && t > ${comfort_temp_max}) return {"Too Warm"};
+      if (!isnan(h) && h < ${comfort_hum_min}) return {"Too Dry"};
+      if (!isnan(h) && h > ${comfort_hum_max}) return {"Too Humid"};
+      return {"Comfortable"};

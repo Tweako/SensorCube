@@ -24,6 +24,8 @@ packages:
   ledring_base: !include components/ledring.yaml
   ldr_base: !include components/ldr.yaml
   led_air_quality: !include components/led-air-quality.yaml
+  comfort: !include components/comfort.yaml
+  eco2_history: !include components/eco2-history.yaml
   diagnostics: !include components/diagnostics.yaml
 
 update:
