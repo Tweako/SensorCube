@@ -44,4 +44,4 @@ text_sensor:
       return out;
 
 web_server:
-  js_include: "components/web/eco2-history.js"
+  js_include: "web/eco2-history.js"  # Relative to this file, so it also works as a remote package
