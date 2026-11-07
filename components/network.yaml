@@ -25,6 +25,8 @@ ota:
 web_server:
   port: 80
   version: 3
+  # eCO2 chart and radar map below the page (one js_include only, so all widgets are in this file)
+  js_include: "web/sensorcube.js"  # Relative to this file, so it also works as a remote package
 
 time:
   # Time from Home Assistant, with SNTP as fallback when no HA client is connected.

@@ -1,6 +1,7 @@
 # eCO2 history of the last 24 hours, shown as a chart on the device's own web page
 # (works without Home Assistant). The history lives in RAM and starts empty after a reboot.
-# Requires: ens160_eco2 (ens160.yaml), web_server (network.yaml)
+# Requires: ens160_eco2 (ens160.yaml), web_server (network.yaml); the chart is drawn by
+# components/web/sensorcube.js
 #
 # The "eCO2 History" text sensor holds one value per slot, oldest first, 2 characters each:
 # round(ppm / 10) in base 36 ("--" = no value). 96 slots x 2 = 192 characters, which stays
@@ -42,6 +43,3 @@ text_sensor:
         }
       }
       return out;
-
-web_server:
-  js_include: "web/eco2-history.js"  # Relative to this file, so it also works as a remote package
