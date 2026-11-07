@@ -18,13 +18,16 @@ There is no application code in the traditional sense: the project is **modular 
 | `components/network.yaml` | WiFi + AP + captive portal, API, `http_request`, OTA (esphome + http_request), web server v3, time (Home Assistant + SNTP fallback), "Online since" sensor. |
 | `components/dht22.yaml` | DHT22/AM2302 temperature & humidity (GPIO5). |
 | `components/ens160.yaml` | ENS160 air quality (I2C `0x53`) + AHT20 (I2C `0x38`) used as compensation sensor, plus "Air Quality" and "Air Quality Sensor Status" (warm-up / initial start-up) text sensors. |
-| `components/ld2450.yaml` | LD2450 mmWave radar on UART (TX GPIO20 / RX GPIO21, 256000 baud), zones, counts, targets (angles of all 3 targets for the LED tracker), "Zone Preset" select. |
+| `components/ld2450.yaml` | LD2450 mmWave radar on UART (TX GPIO20 / RX GPIO21, 256000 baud), zones, counts, targets (angles of all 3 targets for the LED tracker), "Zone Preset" select, "Radar Data" text sensor (JSON with all targets, zones and zone type) for the radar map. |
 | `components/ldr.yaml` | TEMT6000/LDR on ADC GPIO0 (`attenuation: auto`) → lux (gamma corrected), light percentage, daylight binary sensor with configurable threshold. |
 | `components/ledring.yaml` | `led_ring` light (WS2812, GPIO4, `${num_leds}` LEDs) and all effects (incl. "Presence Tracker"); boot animation. |
 | `components/led-air-quality.yaml` | Script + interval that drive `led_ring` from eCO2, ambient light and WiFi state; "LED Air Quality Indicator" switch. |
 | `components/comfort.yaml` | "Comfort" text sensor (Stuffy / Too Cold / Too Warm / Too Dry / Too Humid / Comfortable) from DHT22 + eCO2. |
-| `components/eco2-history.yaml` | 24 h eCO2 history in RAM as the "eCO2 History" text sensor (96 × 15 min, 2 base-36 chars each), drawn as a chart on the web server page by `components/web/eco2-history.js` (`js_include`). |
+| `components/eco2-history.yaml` | 24 h eCO2 history in RAM as the "eCO2 History" text sensor (96 × 15 min, 2 base-36 chars each), drawn as a chart on the web server page by `components/web/sensorcube.js`. |
+| `components/web/sensorcube.js` | The single `web_server.js_include` (set in `network.yaml`; ESPHome allows only one): eCO2 chart and radar map (live targets, draw/save zones). Each widget removes itself when its text sensor returns 404. |
 | `components/diagnostics.yaml` | WiFi signal, ESP32 internal temperature, status binary sensor. |
+| `dist/sensorcube-radar-card.js` | Home Assistant dashboard card (`custom:sensorcube-radar-card`): the radar map from `web/sensorcube.js`, fed by the "Radar Data" entity through `hass`, saving zones with `number.set_value` / `select.select_option`. Hand-written, no build step; it sits in `dist/` because HACS looks there. English + Dutch UI strings (follows the HA language), visual editor via `getConfigForm`. |
+| `hacs.json` | Lets HACS install the card (custom repository, type Dashboard). HACS takes `dist/` from the latest release tag. |
 | `static/` | Jekyll site for GitHub Pages (ESP Web Tools installer). |
 | `.github/workflows/` | CI, firmware release, Pages publishing. |
 
@@ -120,8 +123,10 @@ Check these before removing or renaming IDs or packages:
 - `led-air-quality.yaml` needs the `led_presence_tracker` switch (same file) and the "Presence Tracker" effect; that effect in `ledring.yaml` needs `ld2450_target1_angle`/`ld2450_target2_angle`/`ld2450_target3_angle` (ld2450).
 - `comfort.yaml` needs `dht22_temperature`, `dht22_humidity` (dht22) and `ens160_eco2` (ens160).
 - `eco2-history.yaml` needs `ens160_eco2` (ens160) and the `web_server` (network); its JS reads `/text_sensor/eCO2 History`, so keep that entity name.
+- The radar map in `web/sensorcube.js` reads `/text_sensor/Radar Data` and saves zones by POSTing to the `Zone N X1/Y1/X2/Y2` numbers, `Zone Type` and `Zone Preset` selects, so keep those entity names. Each zone value sends a command to the radar: posting them too fast loses values (tested), hence the 300 ms pause and the check afterwards.
+- The dashboard card `dist/sensorcube-radar-card.js` reads the "Radar Data" entity (disabled by default, the user enables it) and finds the other entities of the same device in the HA entity registry by entity id suffix: `number.*zone_N_x1/y1/x2/y2`, `select.*zone_type`, `select.*zone_preset`. HA derives these ids from the ESPHome entity names, so keep those names. Its drawing code is a copy of the radar map in `web/sensorcube.js`: change both together. Both maps show the room as seen when facing the front of the cube (user's choice): cube at the top, Y downwards, negative X on the left (verified live with a person to the left of the cube). It can't be tested by CI; test it in a browser with a mocked `hass` object (headless Edge `--screenshot` works on Windows) and on a real dashboard.
 - The "Zone Preset" select in `ld2450.yaml` calls `ld2450_radar->set_radar_zone()`; the radar answers with the new zones and updates the zone numbers itself.
-- `ld2450.yaml` and `diagnostics.yaml` don't depend on other components.
+- `ld2450.yaml` and `diagnostics.yaml` don't depend on other components (the radar map JS needs `web_server` from network).
 
 ## LED air quality behaviour
 

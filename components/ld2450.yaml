@@ -4,6 +4,7 @@ substitutions:
   # Zone presets (mm). X is sideways (radar coordinates), Y is the distance from the radar.
   ld2450_preset_width: "4000"   # Half width of the covered area
   ld2450_preset_depth: "6000"   # Maximum distance
+  ld2450_radar_data_interval: "500ms"  # How often "Radar Data" (radar map on the web page) is refreshed
 
 # UART configuration for sensor communication
 uart:
@@ -28,30 +29,42 @@ number:
     zone_1:
       x1:
         name: "Zone 1 X1"
+        id: ld2450_zone1_x1
       x2:
         name: "Zone 1 X2"
+        id: ld2450_zone1_x2
       y1:
         name: "Zone 1 Y1"
+        id: ld2450_zone1_y1
       y2:
         name: "Zone 1 Y2"
+        id: ld2450_zone1_y2
     zone_2:
       x1:
         name: "Zone 2 X1"
+        id: ld2450_zone2_x1
       x2:
         name: "Zone 2 X2"
+        id: ld2450_zone2_x2
       y1:
         name: "Zone 2 Y1"
+        id: ld2450_zone2_y1
       y2:
         name: "Zone 2 Y2"
+        id: ld2450_zone2_y2
     zone_3:
       x1:
         name: "Zone 3 X1"
+        id: ld2450_zone3_x1
       x2:
         name: "Zone 3 X2"
+        id: ld2450_zone3_x2
       y1:
         name: "Zone 3 Y1"
+        id: ld2450_zone3_y1
       y2:
         name: "Zone 3 Y2"
+        id: ld2450_zone3_y2
 
 binary_sensor:
   - platform: ld2450
@@ -79,6 +92,7 @@ select:
     ld2450_id: ld2450_radar
     zone_type:
       name: "Zone Type"
+      id: ld2450_zone_type
 
   # Fills in all zone coordinates at once (the zone numbers are updated by the radar)
   - platform: template
@@ -128,6 +142,45 @@ text_sensor:
       direction:
         name: "Target Direction"
 
+  # All targets and zones as one small JSON text, read by the radar map on the device's web page
+  # (components/web/sensorcube.js) and the Home Assistant dashboard card (dist/sensorcube-radar-card.js).
+  # Only published when something changed.
+  # Example: {"t":[[-520,1830],null,null],"z":[[-4000,0,0,6000],[0,0,4000,6000],[0,0,0,0]],"zt":"Detection"}
+  - platform: template
+    name: "Radar Data"
+    id: ld2450_radar_data
+    icon: "mdi:radar"
+    entity_category: diagnostic
+    disabled_by_default: true
+    update_interval: ${ld2450_radar_data_interval}
+    lambda: |-
+      static std::string last;
+      auto v = [](sensor::Sensor *s) -> int { return isnan(s->state) ? 0 : (int) s->state; };
+      auto n = [](number::Number *s) -> int { return (s->has_state() && !isnan(s->state)) ? (int) s->state : 0; };
+      sensor::Sensor *xs[3] = {id(ld2450_target1_x), id(ld2450_target2_x), id(ld2450_target3_x)};
+      sensor::Sensor *ys[3] = {id(ld2450_target1_y), id(ld2450_target2_y), id(ld2450_target3_y)};
+      number::Number *zs[3][4] = {
+          {id(ld2450_zone1_x1), id(ld2450_zone1_y1), id(ld2450_zone1_x2), id(ld2450_zone1_y2)},
+          {id(ld2450_zone2_x1), id(ld2450_zone2_y1), id(ld2450_zone2_x2), id(ld2450_zone2_y2)},
+          {id(ld2450_zone3_x1), id(ld2450_zone3_y1), id(ld2450_zone3_x2), id(ld2450_zone3_y2)}};
+      char buf[256];
+      int len = snprintf(buf, sizeof(buf), "{\"t\":[");
+      for (int i = 0; i < 3; i++) {
+        bool present = !isnan(xs[i]->state) && !isnan(ys[i]->state);
+        len += present ? snprintf(buf + len, sizeof(buf) - len, "%s[%d,%d]", i ? "," : "", v(xs[i]), v(ys[i]))
+                       : snprintf(buf + len, sizeof(buf) - len, "%snull", i ? "," : "");
+      }
+      len += snprintf(buf + len, sizeof(buf) - len, "],\"z\":[");
+      for (int i = 0; i < 3; i++) {
+        len += snprintf(buf + len, sizeof(buf) - len, "%s[%d,%d,%d,%d]", i ? "," : "", n(zs[i][0]), n(zs[i][1]),
+                        n(zs[i][2]), n(zs[i][3]));
+      }
+      auto zone_type = id(ld2450_zone_type).current_option();
+      snprintf(buf + len, sizeof(buf) - len, "],\"zt\":\"%s\"}", zone_type.empty() ? "" : zone_type.c_str());
+      if (last == buf) return {};
+      last = buf;
+      return last;
+
 sensor:
   - platform: ld2450
     ld2450_id: ld2450_radar
@@ -140,8 +193,10 @@ sensor:
     target_1:
       x:
         name: "Target X"
+        id: ld2450_target1_x
       y:
         name: "Target Y"
+        id: ld2450_target1_y
       speed:
         name: "Target Speed"
       angle:
@@ -151,13 +206,25 @@ sensor:
         name: "Target Distance"
       resolution:
         name: "Target Resolution"
-    # Angles of the 2nd/3rd person, only for the "Presence Tracker" LED effect
+    # 2nd/3rd person: angles for the "Presence Tracker" LED effect, X/Y for "Radar Data"
     target_2:
+      x:
+        id: ld2450_target2_x
+        internal: true
+      y:
+        id: ld2450_target2_y
+        internal: true
       angle:
         name: "Target 2 Angle"
         id: ld2450_target2_angle
         internal: true
     target_3:
+      x:
+        id: ld2450_target3_x
+        internal: true
+      y:
+        id: ld2450_target3_y
+        internal: true
       angle:
         name: "Target 3 Angle"
         id: ld2450_target3_angle

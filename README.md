@@ -26,6 +26,7 @@ Met SensorCube kun je:
 - **LD2450**: mmWave-sensor voor bewegingsdetectie en aanwezigheidssensing
   - Multi-target tracking
   - Configureerbare detectie zones, met presets (hele kamer, 2 of 3 zones naast elkaar, 3 zones op afstand)
+  - Radarkaart op de webpagina en als kaart voor je Home Assistant dashboard: zie live waar personen zijn en teken zones met muis of vinger
   - Bluetooth configuratie support
 
 ### Componenten
@@ -87,6 +88,52 @@ Open het IP-adres van de SensorCube in je browser: onder de entiteiten staat een
 laatste 24 uur (één waarde per 15 minuten). De gegevens staan in het geheugen van het apparaat en beginnen na
 een herstart opnieuw.
 
+### Radarkaart en zones tekenen
+Op dezelfde webpagina staat een radarkaart van bovenaf, zoals je hem ziet als je naar de voorkant van de cube
+kijkt: de cube staat bovenaan, de kamer eronder, het raster is per meter.
+Personen verschijnen als rode stippen (maximaal 3) en zones lichten op als er iemand in staat.
+
+Zones tekenen: kies Zone 1, 2 of 3, sleep een rechthoek op de kaart en druk op *Save zones*. *Clear zone*
+wist de gekozen zone, *Cancel* gooit niet-opgeslagen wijzigingen weg. Staat Zone Type op Disabled, dan zet
+opslaan hem op Detection. Klopt links/rechts niet met jouw kamer, vink dan *Mirror left/right* aan (dit wordt
+per browser onthouden).
+
+### Radarkaart op je Home Assistant dashboard
+Dezelfde radarkaart is er ook als kaart voor je dashboard, met Nederlandse of Engelse teksten (volgt de taal van
+Home Assistant).
+
+1. **Kaart installeren**, op een van deze twee manieren:
+   - Met HACS: *HACS → ⋮ → Custom repositories*, voeg `https://github.com/Tweako/SensorCube` toe met type
+     *Dashboard* en installeer **SensorCube Radar Card**.
+   - Handmatig: zet [`dist/sensorcube-radar-card.js`](dist/sensorcube-radar-card.js) in de map `/config/www/` van
+     Home Assistant en voeg bij *Instellingen → Dashboards → ⋮ → Bronnen* de bron `/local/sensorcube-radar-card.js`
+     toe (type JavaScript-module). Na een update van het bestand: zet er `?v=2` (enz.) achter, anders gebruikt je
+     browser de oude versie.
+2. **Entiteit inschakelen**: open de SensorCube bij *Instellingen → Apparaten en diensten* en schakel onder
+   Diagnostiek de entiteit **Radar Data** in (die staat standaard uit).
+3. **Kaart toevoegen**: bewerk je dashboard, kies *Kaart toevoegen* en zoek **SensorCube Radar**. Of in YAML:
+
+```yaml
+type: custom:sensorcube-radar-card
+entity: sensor.sensorcube_xxxxxx_radar_data
+title: Woonkamer   # optioneel, standaard de naam van het apparaat
+mirror: false      # optioneel, links/rechts spiegelen
+read_only: false   # optioneel, verbergt de knop Zones bewerken (bijv. voor een wandtablet)
+```
+
+Met **Zones bewerken** teken je zones net als op de webpagina; de kaart slaat ze op via de zone-entiteiten van
+dezelfde SensorCube. Buiten de bewerkmodus kun je gewoon over de kaart heen scrollen.
+
+Tip: als er iemand beweegt verandert Radar Data tot twee keer per seconde. Houd hem buiten de geschiedenis, zodat
+je database niet onnodig groeit en het logboek rustig blijft (`configuration.yaml`):
+
+```yaml
+recorder:
+  exclude:
+    entity_globs:
+      - sensor.*_radar_data
+```
+
 ### GPIO Pin Assignment
 ```
 GPIO0  - LDR (lichtintensiteit)
@@ -115,8 +162,10 @@ SensorCube/
 │   ├── led-air-quality.yaml     # Automatische LED kleuren
 │   ├── comfort.yaml             # Comfortindex (binnenklimaat)
 │   ├── eco2-history.yaml        # eCO2 geschiedenis (24 uur) voor de grafiek
-│   ├── web/eco2-history.js      # Grafiek op de webpagina van het apparaat
+│   ├── web/sensorcube.js        # eCO2-grafiek en radarkaart op de webpagina van het apparaat
 │   └── diagnostics.yaml         # Systeem monitoring
+├── dist/sensorcube-radar-card.js # Radarkaart voor het Home Assistant dashboard
+├── hacs.json                    # Zodat HACS de dashboardkaart kan installeren
 ├── static/                      # GitHub Pages website
 └── .github/workflows/           # Automatische CI/CD
 ```
@@ -132,6 +181,7 @@ SensorCube/
 - Comfort: Comfortable, Stuffy (benauwd), Too Cold, Too Warm, Too Dry of Too Humid
 - Air Quality Sensor Status: Warming Up, Initial Start-up, Normal
 - eCO2 History: gegevens voor de grafiek (standaard verborgen in Home Assistant)
+- Radar Data: posities en zones voor de radarkaart (staat standaard uit; inschakelen voor de dashboardkaart)
 - WiFi signaal, ESP32 temperatuur, Online sinds (via Home Assistant of NTP tijd)
 
 
