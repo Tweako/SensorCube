@@ -18,8 +18,9 @@ http_request:
   buffer_size_tx: 2048
 
 ota:
+  # No password here: a device config that uses this package can then add its own
+  # password or encryption (ESPHome merges same-port blocks, but not differing passwords)
   - platform: esphome
-    password: ""
   - platform: http_request
 
 web_server:
