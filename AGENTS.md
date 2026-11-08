@@ -113,8 +113,9 @@ Do not reassign pins without being asked: they reflect the physical PCB.
 
 Check these before removing or renaming IDs or packages:
 
-- `led-air-quality.yaml` needs `ens160_eco2` (ens160), `illuminance` (ldr), `led_ring` and its "No WiFi Indicator" effect (ledring), and the `wifi` component.
+- `led-air-quality.yaml` needs `ens160_eco2` (ens160; a device config can point the colour at another CO2 sensor with the `led_aq_co2_sensor` substitution), `illuminance` (ldr), `led_ring` and its "No WiFi Indicator" effect (ledring), and the `wifi` component.
 - `ens160.yaml` is self-contained: compensation uses `id_temperature_sensor` / `id_humidity_sensor` from the AHT20 defined in the same file (not the DHT22).
+- `network.yaml` leaves the `esphome` OTA without `password:` on purpose: device configs that load this repo as a package add their own password or encryption, and ESPHome refuses to merge two blocks with different passwords.
 - `network.yaml`'s `uptime_timestamp` ("Online since") is updated from the `on_time_sync` of both `time_homeassistant` and `time_sntp`, and computed once per boot.
 - `ledring.yaml` needs the root substitution `num_leds`.
 - `sensorcube-base.yaml` needs root substitutions `friendly_name`, `log_level`, `logger_baud_rate`.
